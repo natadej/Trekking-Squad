@@ -92,6 +92,10 @@ export interface Profile {
   coins: string[]; // claimed coin ids
   quests: string[];
   points: number;
+  /** steps walked, by Vegas day (YYYY-MM-DD) */
+  steps: Record<string, number>;
+  /** saved shops, "area|name" */
+  wish: string[];
   calToken: string;
   updatedAt: number;
 }

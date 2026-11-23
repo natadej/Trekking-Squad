@@ -29,6 +29,8 @@ export function newProfile(): Profile {
     coins: [],
     quests: [],
     points: 0,
+    steps: {},
+    wish: [],
     calToken: token(),
     updatedAt: 0,
   };

@@ -14,6 +14,9 @@ import HeroStudio from './screens/HeroStudio';
 import MapScreen from './screens/MapScreen';
 import Leaders from './screens/Leaders';
 import ImportSheet from './screens/ImportSheet';
+import ShopScreen from './screens/ShopScreen';
+import { startMotionSteps } from './steps';
+import { STEP_M, type Area } from './data/shops';
 
 const TABS = [
   ['home', '🏠', 'Home'], ['plan', '🗓️', 'Plan'], ['map', '🗺️', 'Map'],
@@ -38,6 +41,13 @@ export default function App() {
   const [me, setMe] = useState<{ lat: number; lng: number; acc: number; hdg?: number | null } | null>(null);
   const [gpsError, setGpsError] = useState<string>();
   const synced = useRef(false);
+  const [mapMode, setMapMode] = useState<'strip' | 'shop'>('strip');
+  const [counting, setCounting] = useState(false);
+  const counted = useRef(false);
+  const gpsOn = useRef(false);
+  const pend = useRef(0);
+  const lastStep = useRef(0);
+  const lastFix = useRef<{ lat: number; lng: number; t: number }>(undefined);
 
   useEffect(() => {
     fetch('data/sessions.json').then((r) => r.json()).then(setSessions).catch(() => setToast('Could not load classes. Check your internet.'));
@@ -72,7 +82,7 @@ export default function App() {
     if (!user) return;
     synced.current = false;
     loadRemote(user.uid).then((r) => {
-      if (r && r.updatedAt > p.updatedAt) { setP(r); saveProfile(r); }
+      if (r && r.updatedAt > p.updatedAt) { const m = { ...r, steps: r.steps ?? {}, wish: r.wish ?? [] }; setP(m); saveProfile(m); }
       synced.current = true;
     }).catch(() => { synced.current = true; });
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -91,14 +101,64 @@ export default function App() {
   }, [p.trip, p.prefs.interests, award]);
   useEffect(() => { if (tab === 'plan' && plan.length) award('plan'); if (tab === 'hero') award('hero'); }, [tab, plan.length, award]);
 
+  // steps: motion sensor while the app is open; GPS walking distance when the sensor is quiet
+  const flushSteps = useCallback(() => {
+    const n = pend.current;
+    if (!n) return;
+    pend.current = 0;
+    const day = nowPT().day;
+    update((x) => {
+      const steps = x.steps ?? {}, old = steps[day] ?? 0, nw = old + n;
+      return { ...x, steps: { ...steps, [day]: nw }, points: x.points + Math.floor(nw / 100) - Math.floor(old / 100) };
+    });
+  }, [update]);
+  useEffect(() => { const t = setInterval(flushSteps, 3000); return () => clearInterval(t); }, [flushSteps]);
+  const stepsToday = p.steps?.[nowPT().day] ?? 0;
+  useEffect(() => {
+    const k = 'walk10k:' + nowPT().day;
+    if (stepsToday >= 10000 && !p.quests.includes(k)) {
+      update((x) => (x.quests.includes(k) ? x : { ...x, quests: [...x.quests, k], points: x.points + 200 }));
+      say('👣 10,000 steps today! +200 zeny', true);
+    }
+  }, [stepsToday, p.quests, update, say]);
+
   const startGps = () => {
     if (!navigator.geolocation) { setGpsError('This device has no GPS.'); return; }
+    if (gpsOn.current) return;
+    gpsOn.current = true;
     navigator.geolocation.watchPosition(
-      (pos) => { setGpsError(undefined); setMe({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy, hdg: pos.coords.heading }); },
-      () => setGpsError('Please allow location so your hero can move on the map.'),
+      (pos) => {
+        setGpsError(undefined);
+        setMe({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy, hdg: pos.coords.heading });
+        const f = { lat: pos.coords.latitude, lng: pos.coords.longitude, t: Date.now() }, prev = lastFix.current;
+        if (pos.coords.accuracy > 35) return;
+        if (!prev) { lastFix.current = f; return; }
+        const d = distanceM(prev, f), dt = (f.t - prev.t) / 1000;
+        if (d < 15) return;
+        if (counted.current && Date.now() - lastStep.current > 20000 && d / dt < 2.5) pend.current += Math.round(d / STEP_M);
+        lastFix.current = f;
+      },
+      () => { gpsOn.current = false; setGpsError('Please allow location so your hero can move on the map.'); },
       { enableHighAccuracy: true, maximumAge: 15000 },
     );
   };
+
+  const startSteps = async () => {
+    const stop = await startMotionSteps(() => { pend.current++; lastStep.current = Date.now(); });
+    startGps();
+    counted.current = true;
+    setCounting(true);
+    if (!stop) say('No motion sensor, so I count steps from GPS walking.');
+  };
+  const collectSpot = (a: Area) => {
+    update((x) => (x.coins.includes('spot:' + a.id) ? x : { ...x, coins: [...x.coins, 'spot:' + a.id], points: x.points + 50 }));
+    say(`🪙 +50! You reached ${a.short}!`, true);
+  };
+  const addPlan = (i: PlanItem) => { update((x) => ({ ...x, custom: [...x.custom, i] })); say('🗓️ Added to your plan!'); };
+  const toggleWish = (k: string) => update((x) => {
+    const w = x.wish ?? [];
+    return { ...x, wish: w.includes(k) ? w.filter((y) => y !== k) : [...w, k] };
+  });
 
   const collect = (pl: Place) => {
     if (!me || distanceM(me, pl) > COLLECT_RADIUS_M) return;
@@ -155,6 +215,7 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="logo"><span>TREKKING <b>SQUAD</b></span><small>EPISODE: RIV2026 AT VEGAS</small></div>
+        <span className="chip steps" title="Steps today">👣 {stepsToday.toLocaleString()}</span>
         <span className="chip gold zeny">🪙 {p.points.toLocaleString()} z</span>
       </header>
       {tab === 'home' && <Home p={p} plan={plan} questions={questions} onImport={() => setImporting(true)} go={(t) => setTab(t as Tab)} checkIn={checkIn} />}
@@ -163,13 +224,20 @@ export default function App() {
         onAdd={(i: PlanItem) => update((x) => ({ ...x, custom: [...x.custom, i] }))}
         onCalendar={downloadCal}
         onReset={() => update((x) => ({ ...x, removed: [], custom: x.custom }))} />}
-      {tab === 'map' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} />}
+      {tab === 'map' && (
+        <div className="seg" role="group" aria-label="Map">
+          <button className={mapMode === 'strip' ? 'on' : ''} aria-pressed={mapMode === 'strip'} onClick={() => setMapMode('strip')}>🗺️ Strip map</button>
+          <button className={mapMode === 'shop' ? 'on' : ''} aria-pressed={mapMode === 'shop'} onClick={() => setMapMode('shop')}>🛍️ Shopping & Fun</button>
+        </div>
+      )}
+      {tab === 'map' && mapMode === 'shop' && <ShopScreen p={p} me={me} stepsToday={stepsToday} counting={counting} startSteps={startSteps} collectSpot={collectSpot} addPlan={addPlan} toggleWish={toggleWish} />}
+      {tab === 'map' && mapMode === 'strip' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} />}
       {tab === 'classes' && <Classes p={p} sessions={sessions} planned={new Set(plan.map((i) => i.code).filter(Boolean) as string[])}
         setPrefs={(f: (x: Prefs) => Prefs) => update((x) => ({ ...x, prefs: f(x.prefs) }))}
         toggle={(c) => update((x) => (x.added.includes(c) ? { ...x, added: x.added.filter((y) => y !== c) } : { ...x, added: [...x.added, c], removed: x.removed.filter((y) => y !== c) }))} />}
       {tab === 'hero' && <HeroStudio p={p} setAvatar={(a: Avatar) => update((x) => ({ ...x, avatar: a }))} setNick={(n) => update((x) => ({ ...x, nick: n }))}
         addInterest={(id) => { update((x) => ({ ...x, prefs: { ...x.prefs, interests: x.prefs.interests.includes(id) ? x.prefs.interests : [...x.prefs.interests, id] } })); say('⭐ Added! Your classes now match your job.', true); }} account={account} />}
-      {tab === 'top' && <Leaders p={p} rows={leaders} uid={user?.uid} live={!!user && leaders.length > 0} />}
+      {tab === 'top' && <Leaders p={p} rows={leaders} uid={user?.uid} live={!!user && leaders.length > 0} counting={counting} startSteps={startSteps} />}
 
       {importing && <ImportSheet initial={shared} onClose={() => setImporting(false)} onDone={(t) => { setTrip(t); setImporting(false); say('🎉 Trip saved! I updated your plan.', true); }} />}
       {toast && <div className="toast" role="status">{toast}</div>}

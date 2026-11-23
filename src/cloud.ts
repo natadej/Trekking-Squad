@@ -1,4 +1,5 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { nowPT } from './time';
 import {
   GoogleAuthProvider, getAuth, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithCredential,
   signInWithPopup, signOut, type Auth, type User,
@@ -75,16 +76,21 @@ export async function saveRemote(uid: string, p: Profile, icsText: string) {
   if (!c) return;
   await Promise.all([
     setDoc(doc(c.db, 'vq_profiles', uid), { json: JSON.stringify(p), updatedAt: p.updatedAt }),
-    setDoc(doc(c.db, 'vq_leaders', uid), { nick: p.nick.slice(0, 24), points: p.points, avatar: p.avatar, coins: p.coins.length, at: serverTimestamp() }),
+    setDoc(doc(c.db, 'vq_leaders', uid), { nick: p.nick.slice(0, 24), points: p.points, avatar: p.avatar, coins: p.coins.length, ...stepStats(p), at: serverTimestamp() }),
     setDoc(doc(c.db, 'vq_cal', p.calToken), { uid, ics: icsText, at: serverTimestamp() }),
   ]);
 }
 
-export interface Leader { uid: string; nick: string; points: number; avatar: Avatar; coins: number }
+export interface Leader { uid: string; nick: string; points: number; avatar: Avatar; coins: number; stepsDay?: string; stepsToday?: number; stepsTotal?: number }
+
+export const stepStats = (p: Profile) => {
+  const day = nowPT().day, steps = p.steps ?? {};
+  return { stepsDay: day, stepsToday: steps[day] ?? 0, stepsTotal: Object.values(steps).reduce((a, b) => a + b, 0) };
+};
 
 export function watchLeaders(cb: (rows: Leader[]) => void) {
   const c = cloud();
   if (!c) return () => {};
-  const q = query(collection(c.db, 'vq_leaders'), orderBy('points', 'desc'), limit(50));
+  const q = query(collection(c.db, 'vq_leaders'), orderBy('stepsTotal', 'desc'), limit(50));
   return onSnapshot(q, (s) => cb(s.docs.map((d) => ({ uid: d.id, ...(d.data() as Omit<Leader, 'uid'>) }))), () => cb([]));
 }
