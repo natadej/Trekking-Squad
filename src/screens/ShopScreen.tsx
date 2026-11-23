@@ -68,6 +68,15 @@ export default function ShopScreen({ p, me, stepsToday, counting, startSteps, co
   const near = (a: Area) => !!me && distanceM(me, a) <= SPOT_RADIUS[a.kind];
   const go = (o: LL, far: boolean) => `https://www.google.com/maps/dir/?api=1&destination=${o.lat},${o.lng}&travelmode=${far ? 'driving' : 'walking'}`;
   const ant = data?.areas.find((a) => a.far);
+  const pinAt = useMemo(() => {
+    const out: Record<string, { x: number; y: number }> = {}, placed: { x: number; y: number }[] = [];
+    for (const ar of data?.areas.filter((x) => !x.far) ?? []) {
+      const c = xy(ar);
+      for (let k = 0; k < 12 && placed.some((o) => Math.hypot(o.x - c.x, o.y - c.y) < 26); k++) { c.x += 26 * Math.cos(k * 1.3); c.y += 26 * Math.sin(k * 1.3); }
+      placed.push(c); out[ar.id] = c;
+    }
+    return out;
+  }, [data]);
 
   return (
     <div className="screen">
@@ -88,7 +97,7 @@ export default function ShopScreen({ p, me, stepsToday, counting, startSteps, co
           <text x={xy({ lat: 36.128, lng: -115.168 }).x + 8} y={xy({ lat: 36.128, lng: -115.168 }).y} className="lbl strip">THE STRIP</text>
           {PLACES.filter((x) => x.kind !== 'fun').map((x) => { const c = xy(x); return <circle key={x.id} cx={c.x} cy={c.y} r={x.kind === 'airport' ? 6 : 2.5} fill={x.kind === 'airport' ? '#7dd3fc' : '#c9a36a'} />; })}
           {data?.areas.filter((a) => !a.far).map((a) => {
-            const c = xy(a), sel = area === a.id;
+            const c = pinAt[a.id] ?? xy(a), sel = area === a.id;
             return (
               <g key={a.id} className={`pin ${sel ? 'on' : ''}`} transform={`translate(${c.x},${c.y})`} onClick={() => { setArea(a.id); setOpenA(a); setMore(false); }} role="button" aria-label={a.name}>
                 <circle r={sel ? 14 : 11} fill={got.has('spot:' + a.id) ? '#ffe58a' : '#fffdf6'} stroke={sel ? '#4a7fd8' : '#8a6a44'} strokeWidth="2" />

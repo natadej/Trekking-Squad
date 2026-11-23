@@ -53,7 +53,7 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today }:
     <div className="screen">
       <div className="card">
         <h1>🗺️ RIV2026 world map</h1>
-        <p className="muted">Drag to explore. The mini-map shows the whole Strip. {got.size}/{PLACES.length} coins collected!</p>
+        <p className="muted">Drag to explore. The mini-map shows the whole Strip. {PLACES.filter((x) => got.has(x.id)).length}/{PLACES.length} coins collected!</p>
         {!me && <button className="btn primary big" onClick={startGps}>📍 Show me on the map</button>}
         {gpsError && <p className="tip">⚠️ {gpsError}</p>}
         {near && (near.d < 20000
