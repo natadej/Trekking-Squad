@@ -17,7 +17,7 @@ import ImportSheet from './screens/ImportSheet';
 
 const TABS = [
   ['home', '🏠', 'Home'], ['plan', '🗓️', 'Plan'], ['map', '🗺️', 'Map'],
-  ['classes', '🎓', 'Classes'], ['hero', '🧑‍🚀', 'Hero'], ['top', '🏆', 'Top'],
+  ['classes', '🎓', 'Classes'], ['hero', '⚔️', 'Hero'], ['top', '🏆', 'Top'],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -155,7 +155,7 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="logo"><span>TREKKING <b>SQUAD</b></span><small>EPISODE: RIV2026 AT VEGAS</small></div>
-        <span className="chip gold">⭐ {p.points}</span>
+        <span className="chip gold zeny">🪙 {p.points.toLocaleString()} z</span>
       </header>
       {tab === 'home' && <Home p={p} plan={plan} questions={questions} onImport={() => setImporting(true)} go={(t) => setTab(t as Tab)} checkIn={checkIn} />}
       {tab === 'plan' && <Plan p={p} plan={plan}
@@ -167,7 +167,8 @@ export default function App() {
       {tab === 'classes' && <Classes p={p} sessions={sessions} planned={new Set(plan.map((i) => i.code).filter(Boolean) as string[])}
         setPrefs={(f: (x: Prefs) => Prefs) => update((x) => ({ ...x, prefs: f(x.prefs) }))}
         toggle={(c) => update((x) => (x.added.includes(c) ? { ...x, added: x.added.filter((y) => y !== c) } : { ...x, added: [...x.added, c], removed: x.removed.filter((y) => y !== c) }))} />}
-      {tab === 'hero' && <HeroStudio p={p} setAvatar={(a: Avatar) => update((x) => ({ ...x, avatar: a }))} setNick={(n) => update((x) => ({ ...x, nick: n }))} account={account} />}
+      {tab === 'hero' && <HeroStudio p={p} setAvatar={(a: Avatar) => update((x) => ({ ...x, avatar: a }))} setNick={(n) => update((x) => ({ ...x, nick: n }))}
+        addInterest={(id) => { update((x) => ({ ...x, prefs: { ...x.prefs, interests: x.prefs.interests.includes(id) ? x.prefs.interests : [...x.prefs.interests, id] } })); say('⭐ Added! Your classes now match your job.', true); }} account={account} />}
       {tab === 'top' && <Leaders p={p} rows={leaders} uid={user?.uid} live={!!user && leaders.length > 0} />}
 
       {importing && <ImportSheet initial={shared} onClose={() => setImporting(false)} onDone={(t) => { setTrip(t); setImporting(false); say('🎉 Trip saved! I updated your plan.', true); }} />}

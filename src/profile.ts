@@ -20,7 +20,7 @@ export function newProfile(): Profile {
   return {
     v: 1,
     nick: randomNick(),
-    avatar: { body: 0, skin: 2, hair: 1, hairColor: 1, shirt: 0, bottom: 0, shoes: 1, hat: 0, glasses: 0, dress: 0 },
+    avatar: { job: 0, body: 0, skin: 2, hair: 1, hairColor: 1, shirt: 0, bottom: 0, shoes: 1, hat: 0, glasses: 0, dress: 0 },
     prefs: { interests: [], style: 'mix', level: 200, pace: 'chill', parties: true },
     trip: {},
     custom: [],
@@ -37,7 +37,10 @@ export function newProfile(): Profile {
 export function loadProfile(): Profile {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...newProfile(), ...JSON.parse(raw) };
+    if (raw) {
+      const d = newProfile(), s = JSON.parse(raw) as Partial<Profile>;
+      return { ...d, ...s, avatar: { ...d.avatar, ...s.avatar } };
+    }
   } catch { /* ignore */ }
   return newProfile();
 }
@@ -47,7 +50,7 @@ export function saveProfile(p: Profile) {
 }
 
 export const QUESTS: { id: string; icon: string; title: string; points: number }[] = [
-  { id: 'hero', icon: '🧑‍🚀', title: 'Create your hero', points: 50 },
+  { id: 'hero', icon: '⚔️', title: 'Create your hero', points: 50 },
   { id: 'flight', icon: '✈️', title: 'Add your flight', points: 100 },
   { id: 'hotel', icon: '🏨', title: 'Add your hotel', points: 100 },
   { id: 'interests', icon: '⭐', title: 'Pick what you love', points: 50 },

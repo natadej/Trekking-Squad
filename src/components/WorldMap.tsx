@@ -12,6 +12,7 @@ interface Props {
   world?: World;
   me?: (LL & { hdg?: number | null }) | null;
   avatar: Avatar;
+  nick?: string;
   collected: Set<string>;
   focus: LL;
   next?: { place: Place; title: string };
@@ -25,7 +26,7 @@ const centroid = (r: [number, number][]) => ({ lat: r.reduce((a, p) => a + p[0],
 const fmt = (m: number) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1609).toFixed(1)} mi`);
 
 /** Close-up "adventure" map that follows the hero, with a mini-map of the whole Strip in the corner. */
-export default function WorldMap({ world, me, avatar, collected, focus, next, kinds, booked, onPick, onPoi }: Props) {
+export default function WorldMap({ world, me, avatar, nick, collected, focus, next, kinds, booked, onPick, onPoi }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 360, h: 480 });
   const [zi, setZi] = useState(3);
@@ -107,20 +108,21 @@ export default function WorldMap({ world, me, avatar, collected, focus, next, ki
     <div className="map-wrap">
       <div className="wmap" ref={box} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
         onWheel={(e) => setZi((i) => Math.max(0, Math.min(ZOOMS.length - 1, i + (e.deltaY < 0 ? 1 : -1))))}>
-        <svg viewBox={`${-size.w / 2} ${-size.h / 2} ${size.w} ${size.h}`} width={size.w} height={size.h} className="map" shapeRendering="crispEdges" role="img" aria-label="Close-up map around your hero">
+        <svg viewBox={`${-size.w / 2} ${-size.h / 2} ${size.w} ${size.h}`} width={size.w} height={size.h} className="map" role="img" aria-label="Close-up map around your hero">
           <defs>
             <pattern id="sand" width="24" height="24" patternUnits="userSpaceOnUse">
-              <rect width="24" height="24" fill="#f8d878" /><rect x="4" y="4" width="3" height="3" fill="#e8b850" /><rect x="16" y="15" width="3" height="3" fill="#e8b850" />
+              <rect width="24" height="24" fill="#ecd9a8" /><circle cx="5" cy="5" r="1.6" fill="#d9bf85" /><circle cx="17" cy="16" r="1.6" fill="#d9bf85" /><circle cx="19" cy="4" r="1" fill="#f6ead0" />
             </pattern>
           </defs>
           <rect x={-size.w / 2} y={-size.h / 2} width={size.w} height={size.h} fill="url(#sand)" />
-          <polyline points={road} fill="none" stroke="#3c3c3c" strokeWidth={Math.max(10, 30 * z)} strokeLinecap="square" />
-          <polyline points={road} fill="none" stroke="#fde047" strokeWidth="2" strokeDasharray="10 10" />
+          <polyline points={road} fill="none" stroke="#8a7c68" strokeWidth={Math.max(12, 30 * z) + 4} strokeLinecap="round" strokeLinejoin="round" />
+          <polyline points={road} fill="none" stroke="#b5a68e" strokeWidth={Math.max(12, 30 * z)} strokeLinecap="round" strokeLinejoin="round" />
+          <polyline points={road} fill="none" stroke="#d6c9b0" strokeWidth={Math.max(4, 8 * z)} strokeDasharray="6 10" />
 
           {world?.other.map((b, i) => {
             const c = centroid(b.g), cp = P(c.lat, c.lng);
             if (!inView(cp.x, cp.y, 300)) return null;
-            return <g key={i}><polygon points={pts(b.g)} fill="#c9b48a" stroke="#1a1028" strokeWidth="1.5" />
+            return <g key={i}><polygon points={pts(b.g)} fill="#e2cfa6" stroke="#7a5f45" strokeWidth="1.5" />
               {z >= 1 && b.n && <text x={cp.x} y={cp.y} textAnchor="middle" className="bld-label">{b.n.replace(/ (Hotel|Resort).*$/, '').slice(0, 22)}</text>}</g>;
           })}
 
@@ -132,41 +134,42 @@ export default function WorldMap({ world, me, avatar, collected, focus, next, ki
             const lab = { x: c.x, y: c.y };
             return (
               <g key={pl.id} className="pin" role="button" aria-label={`${pl.name}${got ? ', coins collected' : ''}`} onClick={tap(() => onPick(pl))}>
-                {rings.map((r, i) => <polygon key={i} points={pts(r)} fill={pl.color} stroke="#1a1028" strokeWidth="3" opacity=".92" />)}
-                {!rings.length && <circle cx={c.x} cy={c.y} r="12" fill={pl.color} stroke="#1a1028" strokeWidth="3" />}
+                {rings.map((r, i) => <polygon key={i} points={pts(r)} fill={pl.color} stroke="#5a4030" strokeWidth="2.5" opacity=".9" />)}
+                {!rings.length && <circle cx={c.x} cy={c.y} r="12" fill={pl.color} stroke="#5a4030" strokeWidth="2.5" />}
                 <text x={lab.x} y={lab.y + 6} textAnchor="middle" fontSize="18">{pl.icon}</text>
                 <g transform={`translate(${lab.x} ${lab.y - 22})`}>
-                  <rect x={-pl.short.length * 3.6 - 6} y="-9" width={pl.short.length * 7.2 + 12} height="14" fill="#1a1028" />
+                  <rect x={-pl.short.length * 3.6 - 6} y="-9" width={pl.short.length * 7.2 + 12} height="15" rx="4" fill="rgba(44,36,56,.78)" />
                   <text y="2" textAnchor="middle" className="place-label">{pl.short.toUpperCase()}</text>
                 </g>
                 {got
-                  ? <g><rect x={lab.x + 12} y={lab.y - 4} width="14" height="14" fill="#22c55e" stroke="#fff" strokeWidth="2" /><path d={`M${lab.x + 15} ${lab.y + 3} l3 3 l5 -6`} stroke="#fff" strokeWidth="2" fill="none" /></g>
-                  : <g className="coin-bob"><rect x={lab.x + 12} y={lab.y - 4} width="14" height="14" fill="#facc15" stroke="#a16207" strokeWidth="2" /><text x={lab.x + 19} y={lab.y + 7} textAnchor="middle" fontSize="9" fontWeight="900" fill="#a16207">$</text></g>}
+                  ? <g><circle cx={lab.x + 19} cy={lab.y + 3} r="8" fill="#4fae5a" stroke="#fff" strokeWidth="2" /><path d={`M${lab.x + 15} ${lab.y + 3} l3 3 l5 -6`} stroke="#fff" strokeWidth="2" fill="none" /></g>
+                  : <g className="coin-bob"><circle cx={lab.x + 19} cy={lab.y + 3} r="8" fill="#f6c445" stroke="#9a6b00" strokeWidth="2" /><text x={lab.x + 19} y={lab.y + 7} textAnchor="middle" fontSize="9" fontWeight="900" fill="#9a6b00">z</text></g>}
               </g>
             );
           })}
 
           {pois.map(({ p, x, y, label }) => (
             <g key={p.n + p.p + p.lat} className="poi" role="button" aria-label={`${p.n}${booked(p) ? ', booked for an event' : ''}`} onClick={tap(() => onPoi(p))}>
-              <rect x={x - 10} y={y - 10} width="20" height="20" fill={p.k === 'partner' ? '#fbd000' : p.k === 'aws' ? '#ff9900' : '#fff8e1'} stroke="#1a1028" strokeWidth="2" />
+              <rect x={x - 10} y={y - 10} width="20" height="20" rx="5" fill={p.k === 'partner' ? '#ffe58a' : p.k === 'aws' ? '#ffc27a' : '#fffdf6'} stroke="#6f80ad" strokeWidth="2" />
               <text x={x} y={y + 5} textAnchor="middle" fontSize="12">{POI_ICON[p.k]}</text>
               {booked(p) && <text x={x + 10} y={y - 6} fontSize="10">🔒</text>}
               {label && <text x={x} y={y + 20} textAnchor="middle" className="poi-label">{p.n.length > 18 ? p.n.slice(0, 17) + '…' : p.n}</text>}
             </g>
           ))}
 
-          {next && nextPt && !nextOff && <g transform={`translate(${nextPt.x} ${nextPt.y - 46})`} className="coin-bob"><path d="M-8 -8 h16 v8 h6 l-14 12 l-14 -12 h6 z" fill="#43b047" stroke="#1a1028" strokeWidth="2" /></g>}
+          {next && nextPt && !nextOff && <g transform={`translate(${nextPt.x} ${nextPt.y - 46})`} className="coin-bob"><path d="M-8 -8 h16 v8 h6 l-14 12 l-14 -12 h6 z" fill="#4a7fd8" stroke="#fff" strokeWidth="2" /></g>}
           {edge && (
             <g transform={`translate(${edge.x} ${edge.y}) rotate(${edge.deg})`} className="edge-arrow">
-              <path d="M-14 -10 L14 0 L-14 10 L-8 0 Z" fill="#43b047" stroke="#1a1028" strokeWidth="2.5" />
+              <path d="M-14 -10 L14 0 L-14 10 L-8 0 Z" fill="#4a7fd8" stroke="#fff" strokeWidth="2.5" />
             </g>
           )}
 
           {mePt && (
             <g transform={`translate(${mePt.x} ${mePt.y})`} className="me">
-              {hdg !== undefined && <path transform={`rotate(${hdg})`} d="M0 -34 L9 -20 L-9 -20 Z" fill="#049cd8" stroke="#1a1028" strokeWidth="2" />}
-              <rect x="-12" y="8" width="24" height="6" fill="rgba(26,16,40,.3)" />
-              <foreignObject x="-15" y="-40" width="30" height="50"><Hero a={avatar} size={50} /></foreignObject>
+              {hdg !== undefined && <path transform={`rotate(${hdg})`} d="M0 -34 L9 -20 L-9 -20 Z" fill="#f6c445" stroke="#5a4030" strokeWidth="2" />}
+              <ellipse cx="0" cy="10" rx="12" ry="4" fill="rgba(44,36,56,.3)" />
+              <foreignObject x="-18" y="-36" width="36" height="48"><Hero a={avatar} size={60} /></foreignObject>
+              {nick && <text y="26" textAnchor="middle" className="me-name">{nick}</text>}
             </g>
           )}
         </svg>
@@ -205,15 +208,15 @@ function MiniMap({ center, me, hdg, next, view, onJump }: { center: LL; me?: LL 
   };
   return (
     <div className="minimap" onPointerDown={(e) => e.stopPropagation()}>
-      <svg viewBox={`0 0 ${MW} ${MH}`} width={MW} height={MH} onClick={jump} shapeRendering="crispEdges" role="img" aria-label="Mini-map of the whole Strip. Tap to jump there.">
-        <rect width={MW} height={MH} fill="#f8d878" />
-        <polyline points={mroad} fill="none" stroke="#3c3c3c" strokeWidth="4" />
-        {PLACES.map((p) => { const q = mp(p.lat, p.lng); return <rect key={p.id} x={q.x - 2.5} y={q.y - 2.5} width="5" height="5" fill={p.color} stroke="#1a1028" strokeWidth="1" />; })}
-        {n && <path d={`M${n.x} ${n.y - 6} l2 4 h4 l-3 3 l1 4 l-4 -2 l-4 2 l1 -4 l-3 -3 h4 z`} fill="#43b047" stroke="#1a1028" strokeWidth="1" />}
+      <svg viewBox={`0 0 ${MW} ${MH}`} width={MW} height={MH} onClick={jump} role="img" aria-label="Mini-map of the whole Strip. Tap to jump there.">
+        <rect width={MW} height={MH} fill="#ecd9a8" />
+        <polyline points={mroad} fill="none" stroke="#a89a86" strokeWidth="4" strokeLinejoin="round" />
+        {PLACES.map((p) => { const q = mp(p.lat, p.lng); return <rect key={p.id} x={q.x - 2.5} y={q.y - 2.5} width="5" height="5" fill={p.color} stroke="#5a4030" strokeWidth="1" />; })}
+        {n && <path d={`M${n.x} ${n.y - 6} l2 4 h4 l-3 3 l1 4 l-4 -2 l-4 2 l1 -4 l-3 -3 h4 z`} fill="#4a7fd8" stroke="#fff" strokeWidth="1" />}
         <rect x={c.x - (view.w * PERM) / 2} y={c.y - (view.h * PERM) / 2} width={view.w * PERM} height={view.h * PERM} fill="none" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 2" />
         {m && <g transform={`translate(${m.x} ${m.y})`}>
-          {hdg !== undefined && <path transform={`rotate(${hdg})`} d="M0 -9 L4 -2 L-4 -2 Z" fill="#049cd8" stroke="#1a1028" strokeWidth="1" />}
-          <rect x="-3" y="-3" width="6" height="6" fill="#e52521" stroke="#fff" strokeWidth="1.5" />
+          {hdg !== undefined && <path transform={`rotate(${hdg})`} d="M0 -9 L4 -2 L-4 -2 Z" fill="#f6c445" stroke="#5a4030" strokeWidth="1" />}
+          <circle r="3.5" fill="#e2604e" stroke="#fff" strokeWidth="1.5" />
         </g>}
         <text x={MW - 8} y="12" textAnchor="middle" className="mini-n">N</text>
       </svg>

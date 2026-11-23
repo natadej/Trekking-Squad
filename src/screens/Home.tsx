@@ -1,5 +1,6 @@
 import type { PlanItem, Profile } from '../types';
 import Hero from '../components/Hero';
+import { LOOKS } from '../data/looks';
 import { QUESTS } from '../profile';
 import { dayLabel, hm, nowPT } from '../time';
 import { KIND, YesNo, mapsLink, placeName, uberLink } from '../ui';
@@ -33,11 +34,11 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
       <div className="hello card">
         <Hero a={p.avatar} size={130} wave />
         <div>
-          <p className="label">PLAYER 1</p>
+          <p className="label">LV {Math.min(99, 1 + Math.floor(p.points / 100))} · {(LOOKS.job[p.avatar.job ?? 0] ?? LOOKS.job[0]).name.toUpperCase()}</p>
           <h1>{p.nick}</h1>
           <p className="muted">{daysTo > 0 ? `${daysTo} days until Episode RIV2026 at Vegas!` : 'Episode RIV2026 at Vegas is ON!'}</p>
           <div className="chips">
-            <span className="chip gold">⭐ {p.points} points</span>
+            <span className="chip gold">🪙 {p.points} zeny</span>
             <span className="chip">🪙 {p.coins.length} places</span>
           </div>
         </div>

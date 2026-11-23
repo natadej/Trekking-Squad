@@ -67,6 +67,7 @@ export interface Prefs {
 }
 
 export interface Avatar {
+  job: number;
   body: number;
   skin: number;
   hair: number;

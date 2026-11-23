@@ -67,7 +67,7 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today }:
         </div>
       </div>
 
-      <WorldMap world={world} me={me && me.lat < 36.2 && me.lat > 36 && me.lng > -115.3 && me.lng < -115 ? me : null} avatar={p.avatar} collected={got}
+      <WorldMap world={world} me={me && me.lat < 36.2 && me.lat > 36 && me.lng > -115.3 && me.lng < -115 ? me : null} avatar={p.avatar} nick={p.nick} collected={got}
         focus={home} next={next} kinds={kinds} booked={booked} onPick={(x) => { setPoi(undefined); setPick(x); }} onPoi={(x) => { setPick(undefined); setPoi(x); }} />
       <p className="map-key muted">🔒 = booked for an AWS or partner event · 🤝 partner spot · ⭐ AWS zone · tap any building to see what's inside</p>
 
