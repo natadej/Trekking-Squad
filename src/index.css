@@ -10,8 +10,8 @@
   --blue: #049cd8;
   --brick: #c84c0c;
   --radius: 0;
-  --px: 'Press Start 2P', monospace;
-  font-family: 'Pixelify Sans', 'Courier New', monospace;
+  --px: 'Press Start 2P', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', monospace;
+  font-family: 'Pixelify Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Courier New', monospace;
   font-size: 18px;
   line-height: 1.35;
   color: var(--ink);
