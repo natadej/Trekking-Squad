@@ -76,6 +76,7 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
   const first = days[0], last = days[days.length - 1];
   const removed = new Set(p.removed);
   let badgeDone = false;
+  const missed: string[] = [];
 
   // Arrival
   const arr = trip.arrive;
@@ -123,13 +124,22 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
     // Fixed events (keynotes, parties)
     for (const ev of FIXED_EVENTS.filter((e) => e.day === day)) {
       if (removed.has(ev.id)) continue;
-      if (ev.start < lo || ev.start + 60 > hi) continue;
-      const cut = ev.end > hi;
       if (ev.optional && !(prefs.parties || ev.kind === 'keynote')) continue;
+      if (ev.start < lo || ev.start + 60 > hi) {
+        if (dep && day === dep.depDate && ev.start >= hi) missed.push(ev.title);
+        continue;
+      }
+      const cut = ev.end > hi;
       if (ev.kind === 'fun' && ev.id === 'run5k' && !prefs.parties) continue;
       const end = cut ? hi - 15 : ev.end;
       if (!fits(ctx, day, ev.start, end, ev.place)) continue;
       add(ctx, { id: ev.id, day, start: ev.start, end, title: ev.title, kind: ev.kind === 'keynote' ? 'keynote' : 'event', place: ev.place, note: cut ? 'Leave early so you catch your flight!' : ev.note });
+    }
+
+    // Classes the user starred come before anything flexible
+    const mine = sessions.filter((x) => x.d === day && p.added.includes(x.c));
+    for (const s of mine) {
+      add(ctx, { id: 's-' + s.c, day, start: s.s, end: s.e, title: s.t, kind: 'session', place: VENUE_PLACE[s.v], code: s.c, note: `${s.y} · ${s.r}` });
     }
 
     // Badge pickup if not done at the airport
@@ -149,9 +159,9 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
       }
     }
 
-    // Lunch: 45 min somewhere between 11:30 and 1:30
+    // Lunch: 45 min somewhere between 11 and 2:30
     if (lo < 12 * 60 && hi > 13 * 60) {
-      for (const s of [12 * 60, 11 * 60 + 30, 12 * 60 + 30, 13 * 60]) {
+      for (const s of [12 * 60, 11 * 60 + 30, 12 * 60 + 30, 13 * 60, 11 * 60, 13 * 60 + 30, 14 * 60, 14 * 60 + 30]) {
         if (fits(ctx, day, s, s + 45)) {
           add(ctx, { id: 'lunch-' + day, day, start: s, end: s + 45, title: 'Lunch break', kind: 'meal' });
           break;
@@ -164,14 +174,8 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
     if (hours) {
       const picked = new Set(ctx.items.filter((i) => i.code).map((i) => baseCode(i.code!)));
       const max = prefs.pace === 'busy' ? 6 : 4;
-      let count = 0;
-      // user-picked sessions first
-      for (const s of sessions.filter((x) => x.d === day && p.added.includes(x.c))) {
-        const place = VENUE_PLACE[s.v];
-        add(ctx, { id: 's-' + s.c, day, start: s.s, end: s.e, title: s.t, kind: 'session', place, code: s.c, note: `${s.y} · ${s.r}` });
-        picked.add(baseCode(s.c));
-        count++;
-      }
+      for (const s of mine) picked.add(baseCode(s.c));
+      let count = mine.length;
       const cands = sessions
         .filter((s) => s.d === day && s.s >= Math.max(hours[0], lo) && s.e <= Math.min(hours[1], hi) && !removed.has(s.c))
         .map((s) => ({ s, sc: scoreSession(s, prefs, hotel) }))
@@ -209,6 +213,9 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
     }
   }
 
+  const fly = ctx.items.find((i) => i.id === 'depart');
+  if (fly && missed.length) fly.note = `You'll miss ${missed.join(' and ')}. A later flight lets you go! · ${fly.note}`;
+
   for (const c of p.custom) ctx.items.push(c);
   return ctx.items.filter((i) => !removed.has(i.id)).sort((a, b) => (a.day + pad(a.start)).localeCompare(b.day + pad(b.start)));
 }
@@ -225,7 +232,7 @@ export function travelBetween(items: PlanItem[]) {
   const out: { after: PlanItem; before: PlanItem; min: number }[] = [];
   for (let i = 1; i < items.length; i++) {
     const a = items[i - 1], b = items[i];
-    if (a.day !== b.day || !a.place || !b.place || a.place === b.place) continue;
+    if (a.day !== b.day || !a.place || !b.place || a.place === b.place || a.kind === 'ride') continue;
     out.push({ after: a, before: b, min: travelMin(a.place, b.place) });
   }
   return out;

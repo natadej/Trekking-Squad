@@ -1,9 +1,11 @@
+import { useEffect, useMemo, useRef } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import type { Avatar } from '../types';
 import { LOOKS } from '../data/looks';
 
 const OUT = '#2b2140';
 
-export default function Hero({ a, size = 160, wave = false }: { a: Avatar; size?: number; wave?: boolean }) {
+function HeroSvg({ a, size, wave }: { a: Avatar; size: number; wave: boolean }) {
   const fem = a.body % 2 === 1;
   const kind = Math.floor(a.body / 2); // 0 normal, 1 tall, 2 strong, 3 little, 4 sporty
   const tw = kind === 2 ? 50 : kind === 3 ? 38 : 42; // torso width
@@ -27,7 +29,7 @@ export default function Hero({ a, size = 160, wave = false }: { a: Avatar; size?
   const H = footY + 16;
 
   return (
-    <svg viewBox={`0 0 120 ${H}`} width={size * (120 / H) * (H / 200)} height={size * (H / 200)} role="img" aria-label="Your hero" className={wave ? 'hero wave' : 'hero'}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 120 ${H}`} width={size * (120 / H) * (H / 200)} height={size * (H / 200)}>
       <g stroke={OUT} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
         {/* back hair */}
         {a.hair === 4 && <path d={`M${cx - 32} ${hy} Q${cx - 36} ${hy + 46} ${cx - 26} ${top + 18} L${cx + 26} ${top + 18} Q${cx + 36} ${hy + 46} ${cx + 32} ${hy} Z`} fill={hairC} />}
@@ -114,6 +116,42 @@ export default function Hero({ a, size = 160, wave = false }: { a: Avatar; size?
       </g>
     </svg>
   );
+}
+
+const PX = 0.4; // art pixels per SVG unit: 120 units wide -> 48 pixels
+
+/** The hero drawn as chunky pixel art: the vector hero is rasterised small, then scaled up without smoothing. */
+export default function Hero({ a, size = 160, wave = false }: { a: Avatar; size?: number; wave?: boolean }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const svg = useMemo(() => renderToStaticMarkup(<HeroSvg a={a} size={size} wave={wave} />), [a, size, wave]);
+  const H = Number(/viewBox="0 0 120 ([\d.]+)"/.exec(svg)?.[1] ?? 200);
+  const w = Math.round(120 * PX), h = Math.round(H * PX);
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      const c = ref.current, ctx = c?.getContext('2d', { willReadFrequently: true });
+      if (!c || !ctx) return;
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      try {
+        const d = ctx.getImageData(0, 0, w, h), px = d.data;
+        const solid = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && px[(y * w + x) * 4 + 3] > 110;
+        const keep = new Uint8Array(w * h);
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) keep[y * w + x] = solid(x, y) ? 1 : 0;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          if (keep[y * w + x]) px[i + 3] = 255;
+          else if (keep[y * w + x - 1] && x > 0 || keep[y * w + x + 1] && x < w - 1 || keep[(y - 1) * w + x] || keep[(y + 1) * w + x]) {
+            px[i] = 26; px[i + 1] = 16; px[i + 2] = 40; px[i + 3] = 255;
+          } else px[i + 3] = 0;
+        }
+        ctx.putImageData(d, 0, 0);
+      } catch { /* tainted canvas: keep the smooth drawing */ }
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }, [svg, w, h]);
+  return <canvas ref={ref} width={w} height={h} role="img" aria-label="Your hero" className={wave ? 'hero wave' : 'hero'}
+    style={{ width: size * 0.6, height: size * (H / 200) }} />;
 }
 
 function FrontHair({ style, cx, hy, hr, color }: { style: number; cx: number; hy: number; hr: number; color: string }) {

@@ -28,17 +28,17 @@ export default function Plan({ p, plan, onRemove, onAdd, onCalendar, onReset }: 
   return (
     <div className="screen">
       <div className="card">
-        <h1>🗓️ My hour-by-hour plan</h1>
-        <p className="muted">I planned every hour with travel time, food and rest. Tap ✕ to skip something.</p>
+        <h1>🗓️ Level map</h1>
+        <p className="muted">Every day is a level. I planned each hour with travel time, food and rest. Tap ✕ to skip something.</p>
         <div className="row">
           <button className="btn primary" onClick={onCalendar}>📅 Put it in my calendar</button>
           <button className="btn ghost small" onClick={onReset}>↺ Re-plan</button>
         </div>
       </div>
       <div className="days" role="tablist">
-        {days.map((d) => (
+        {days.map((d, n) => (
           <button key={d} role="tab" aria-selected={d === day} className={`day ${d === day ? 'on' : ''}`} onClick={() => setDay(d)}>
-            {dayLabel(d).split(' ')[0]}<small>{dayLabel(d, true).split(', ')[1]}</small>
+            <small>LEVEL {n + 1}</small>{dayLabel(d).split(' ')[0]}<small>{dayLabel(d, true).split(', ')[1]}</small>
           </button>
         ))}
       </div>
@@ -47,7 +47,7 @@ export default function Plan({ p, plan, onRemove, onAdd, onCalendar, onReset }: 
         {items.map((i, k) => {
           const prev = items[k - 1];
           const clash = prev && prev.end > i.start && prev.kind !== 'flight' && i.kind !== 'flight';
-          const move = prev && prev.place && i.place && prev.place !== i.place ? travelMin(prev.place, i.place) : 0;
+          const move = prev && prev.kind !== 'ride' && prev.place && i.place && prev.place !== i.place ? travelMin(prev.place, i.place) : 0;
           const k2 = KIND[i.kind];
           return (
             <li key={i.id}>

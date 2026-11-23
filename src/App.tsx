@@ -130,7 +130,7 @@ export default function App() {
     const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'vegas-quest-reinvent-2026.ics';
+    a.download = 'trekking-squad-riv2026-at-vegas.ics';
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
     award('calendar');
@@ -154,7 +154,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="logo">🎰 Vegas <b>Quest</b></div>
+        <div className="logo"><span>TREKKING <b>SQUAD</b></span><small>EPISODE: RIV2026 AT VEGAS</small></div>
         <span className="chip gold">⭐ {p.points}</span>
       </header>
       {tab === 'home' && <Home p={p} plan={plan} questions={questions} onImport={() => setImporting(true)} go={(t) => setTab(t as Tab)} checkIn={checkIn} />}

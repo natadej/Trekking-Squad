@@ -1,6 +1,6 @@
-# Vegas Quest by Luffy
+# Trekking Squad
 
-A bright cartoon game (made for ages 10–12) that plans a real AWS re:Invent 2026 trip to Las Vegas (Nov 28 – Dec 3, 2026).
+**Episode: RIV2026 at Vegas.** A retro pixel-art adventure (made for ages 10–12) that plans a real AWS re:Invent 2026 trip to Las Vegas (Nov 28 – Dec 3, 2026).
 
 - **Hero studio**: 10 categories (body, skin, hair style, hair color, shirt, dress, pants, shoes, hat, glasses), 10+ looks each.
 - **Trip import**: paste or share a flight/hotel confirmation email; it reads flights (incl. schema.org JSON-LD), times and hotel. Everything else is yes/no.

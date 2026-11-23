@@ -33,8 +33,9 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
       <div className="hello card">
         <Hero a={p.avatar} size={130} wave />
         <div>
-          <h1>Hi, {p.nick}!</h1>
-          <p className="muted">{daysTo > 0 ? `${daysTo} days until your Vegas quest!` : 'Your Vegas quest is on!'}</p>
+          <p className="label">PLAYER 1</p>
+          <h1>{p.nick}</h1>
+          <p className="muted">{daysTo > 0 ? `${daysTo} days until Episode RIV2026 at Vegas!` : 'Episode RIV2026 at Vegas is ON!'}</p>
           <div className="chips">
             <span className="chip gold">⭐ {p.points} points</span>
             <span className="chip">🪙 {p.coins.length} places</span>
@@ -51,7 +52,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
 
       {next && (
         <div className={`card next ${KIND[next.kind].cls}`}>
-          <p className="label">{daysTo > 0 ? 'First stop' : 'Next up'}</p>
+          <p className="label">{daysTo > 0 ? 'First stage' : 'Next stage'}</p>
           <h2>{KIND[next.kind].icon} {next.title}</h2>
           <p>{dayLabel(next.day, true)} · {hm(next.start)}{placeName(next) ? ` · ${placeName(next)}` : ''}</p>
           {leaveBy !== undefined && <p className="tip">🚶 Leave by <b>{hm(leaveBy)}</b> to get there on time.</p>}
@@ -77,7 +78,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
       </div>
 
       <div className="card">
-        <h2>🏅 Quests</h2>
+        <h2>🏅 Missions</h2>
         <ul className="quests">
           {QUESTS.map((x) => {
             const done = p.quests.includes(x.id);

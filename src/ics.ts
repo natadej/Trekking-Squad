@@ -5,9 +5,9 @@ import { ptToUtc } from './time';
 const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/[,;]/g, (m) => '\\' + m);
 
-export function toIcs(items: PlanItem[], name = 'Vegas Quest: re:Invent 2026') {
+export function toIcs(items: PlanItem[], name = 'Trekking Squad: RIV2026 at Vegas') {
   const now = stamp(new Date());
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Vegas Quest//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${esc(name)}`, 'X-WR-TIMEZONE:America/Los_Angeles'];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Trekking Squad//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${esc(name)}`, 'X-WR-TIMEZONE:America/Los_Angeles'];
   for (const i of items) {
     const place = placeById(i.place);
     lines.push(
@@ -50,7 +50,7 @@ export function subscribeLinks(feedUrl: string) {
   const webcal = feedUrl.replace(/^https?:/, 'webcal:');
   return {
     google: `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcal)}`,
-    outlook: `https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(feedUrl)}&name=${encodeURIComponent('Vegas Quest')}`,
+    outlook: `https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(feedUrl)}&name=${encodeURIComponent('Trekking Squad')}`,
     apple: webcal,
   };
 }

@@ -47,4 +47,20 @@ describe('planner', () => {
     expect(ics.match(/BEGIN:VEVENT/g)!.length).toBe(plan.length);
     expect(ics).toContain('DTSTART:20261201T163000Z'); // CEO keynote 8:30 AM PST
   });
+
+  it('moves lunch out of the way of a class you starred', () => {
+    const q = { ...p, added: ['NET321-R1'] };
+    const wed = buildPlan(q, sessions).filter((i) => i.day === '2026-12-02');
+    const cls = wed.find((i) => i.code === 'NET321-R1')!;
+    const lunch = wed.find((i) => i.id === 'lunch-2026-12-02');
+    expect(cls).toBeTruthy();
+    if (lunch) expect(lunch.end <= cls.start || lunch.start >= cls.end).toBe(true);
+  });
+
+  it('warns when the flight home leaves before re:Play', () => {
+    const q = { ...p, prefs: { ...p.prefs, parties: true }, trip: { ...p.trip, depart: { ...p.trip.depart!, depTime: 18 * 60 } } };
+    const plan2 = buildPlan(q, sessions);
+    expect(plan2.some((i) => i.id === 'replay')).toBe(false);
+    expect(plan2.find((i) => i.id === 'depart')!.note).toMatch(/miss .*re:Play/);
+  });
 });

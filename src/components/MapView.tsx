@@ -13,7 +13,7 @@ export const project = (lat: number, lng: number) => ({
 });
 
 const SHAPE: Record<Place['kind'], (x: number, y: number, r: number, fill: string) => React.ReactNode> = {
-  hotel: (x, y, r, f) => <rect x={x - r} y={y - r} width={r * 2} height={r * 2} rx={r * 0.35} fill={f} />,
+  hotel: (x, y, r, f) => <g><rect x={x - r} y={y - r} width={r * 2} height={r * 2} fill={f} /><path d={`M${x - r} ${y - r / 3} h${r * 2} M${x - r} ${y + r / 3} h${r * 2}`} strokeWidth="1" opacity=".5" /></g>,
   venue: (x, y, r, f) => <path d={star(x, y, r * 1.35, r * 0.7)} fill={f} />,
   fun: (x, y, r, f) => <circle cx={x} cy={y} r={r} fill={f} />,
   airport: (x, y, r, f) => <path d={`M${x} ${y - r * 1.2} L${x + r * 1.2} ${y} L${x} ${y + r * 1.2} L${x - r * 1.2} ${y} Z`} fill={f} />,
@@ -64,21 +64,21 @@ export default function MapView({ focus, me, avatar, collected, highlight = [], 
         <button onClick={() => setZoom((z) => Math.max(1, z - 0.5))} aria-label="Zoom out">－</button>
       </div>
       <div className="map-scroll" ref={box}>
-        <svg viewBox={`0 0 ${W} ${H}`} width={`${zoom * 100}%`} className="map" role="img" aria-label="Cartoon map of the Las Vegas Strip">
+        <svg viewBox={`0 0 ${W} ${H}`} width={`${zoom * 100}%`} className="map" shapeRendering="crispEdges" role="img" aria-label="Cartoon map of the Las Vegas Strip">
           <defs>
             <pattern id="sand" width="24" height="24" patternUnits="userSpaceOnUse">
-              <rect width="24" height="24" fill="#fde9b8" />
-              <circle cx="6" cy="6" r="1.4" fill="#f5d48a" />
-              <circle cx="18" cy="16" r="1" fill="#f5d48a" />
+              <rect width="24" height="24" fill="#f8d878" />
+              <rect x="4" y="4" width="3" height="3" fill="#e8b850" />
+              <rect x="16" y="15" width="3" height="3" fill="#e8b850" />
             </pattern>
           </defs>
           <rect width={W} height={H} fill="url(#sand)" />
           {/* mountains */}
           {[[20, 40], [60, 20], [30, 330], [16, 600]].map(([x, y], i) => (
-            <path key={i} d={`M${x - 26} ${y + 30} L${x} ${y} L${x + 26} ${y + 30} Z`} fill="#e8b98a" stroke="#c98d5a" strokeWidth="2" />
+            <path key={i} d={`M${x - 28} ${y + 30} v-8 h8 v-8 h8 v-8 h8 v-6 h8 v6 h8 v8 h8 v8 h8 v8 Z`} fill="#c84c0c" stroke="#1a1028" strokeWidth="2" />
           ))}
           {/* I-15 */}
-          <path d={`M${W * 0.08} ${H} C ${W * 0.2} ${H * 0.6}, ${W * 0.22} ${H * 0.3}, ${W * 0.4} 0`} fill="none" stroke="#cbd5e1" strokeWidth="14" />
+          <path d={`M${W * 0.08} ${H} C ${W * 0.2} ${H * 0.6}, ${W * 0.22} ${H * 0.3}, ${W * 0.4} 0`} fill="none" stroke="#8c8c8c" strokeWidth="14" />
           <text x={W * 0.15} y={H * 0.72} className="map-road-label">I-15</text>
           {/* runways */}
           <g transform={`translate(${ap.x + 20} ${ap.y + 10}) rotate(-12)`}>
@@ -86,7 +86,7 @@ export default function MapView({ focus, me, avatar, collected, highlight = [], 
             <rect x="-30" y="16" width="100" height="12" rx="3" fill="#94a3b8" />
           </g>
           {/* the Strip */}
-          <polyline points={road} fill="none" stroke="#475569" strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+          <polyline points={road} fill="none" stroke="#3c3c3c" strokeWidth="18" strokeLinecap="square" strokeLinejoin="miter" />
           <polyline points={road} fill="none" stroke="#fde047" strokeWidth="2" strokeDasharray="10 10" />
           <text transform={`translate(${project(36.108, -115.1735).x - 6} ${project(36.108, -115.1735).y}) rotate(-90)`} className="map-road-label">LAS VEGAS BLVD · THE STRIP</text>
           {/* planned route */}
@@ -117,7 +117,7 @@ export default function MapView({ focus, me, avatar, collected, highlight = [], 
         </svg>
       </div>
       <div className="map-legend" aria-label="Map key">
-        <span><svg width="16" height="16"><rect x="2" y="2" width="12" height="12" rx="3" fill="#fbbf24" stroke="#2b2140" strokeWidth="2" /></svg> Hotel</span>
+        <span><svg width="16" height="16"><rect x="2" y="2" width="12" height="12" fill="#fbbf24" stroke="#2b2140" strokeWidth="2" /></svg> Hotel</span>
         <span><svg width="16" height="16"><path d={star(8, 8, 8, 4)} fill="#fb923c" stroke="#2b2140" strokeWidth="1.5" /></svg> re:Invent venue</span>
         <span><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="#f472b6" stroke="#2b2140" strokeWidth="2" /></svg> Fun spot</span>
         <span><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="#facc15" stroke="#a16207" strokeWidth="2" /></svg> Coins to get</span>
