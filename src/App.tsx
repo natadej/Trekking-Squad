@@ -35,7 +35,7 @@ export default function App() {
   const [party, setParty] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [leaders, setLeaders] = useState<Leader[]>([]);
-  const [me, setMe] = useState<{ lat: number; lng: number; acc: number } | null>(null);
+  const [me, setMe] = useState<{ lat: number; lng: number; acc: number; hdg?: number | null } | null>(null);
   const [gpsError, setGpsError] = useState<string>();
   const synced = useRef(false);
 
@@ -94,7 +94,7 @@ export default function App() {
   const startGps = () => {
     if (!navigator.geolocation) { setGpsError('This device has no GPS.'); return; }
     navigator.geolocation.watchPosition(
-      (pos) => { setGpsError(undefined); setMe({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }); },
+      (pos) => { setGpsError(undefined); setMe({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy, hdg: pos.coords.heading }); },
       () => setGpsError('Please allow location so your hero can move on the map.'),
       { enableHighAccuracy: true, maximumAge: 15000 },
     );
