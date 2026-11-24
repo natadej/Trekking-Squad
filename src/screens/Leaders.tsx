@@ -33,7 +33,7 @@ export default function Leaders({ p, rows, uid, live, counting, startSteps }: Pr
             <li key={r.uid} className={me ? 'me' : ''}>
               <span className="rank">{medal[i] || i + 1}</span>
               <span className="mini"><Hero a={r.avatar} size={90} /></span>
-              <span><b>{r.nick}</b>{me && <span className="chip gold" style={{ marginLeft: 6 }}>YOU</span>}<br /><span className="small muted">{((s * 0.75) / 1000).toFixed(1)} km · 🪙 {r.points} pts</span></span>
+              <span><b>{r.nick}</b>{me && <span className="chip gold" style={{ marginLeft: 6 }}>You</span>}<br /><span className="small muted">{((s * 0.75) / 1000).toFixed(1)} km · 🪙 {r.points} pts</span></span>
               <b>👣 {s.toLocaleString()}</b>
             </li>
           );

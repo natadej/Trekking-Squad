@@ -87,6 +87,11 @@ export default function WorldMap3D(props: Props) {
     setBloom();
 
     const hero = makeAvatar(P.current.avatar); scene.add(hero.g);
+    // x-ray silhouette: draws only where a building hides the character
+    // (opaque + renderOrder so it is drawn after the city but before the character itself)
+    const ghostM = new THREE.MeshBasicMaterial({ color: '#3b82f6', depthWrite: false, depthFunc: THREE.GreaterDepth });
+    const parts: THREE.Mesh[] = []; hero.g.traverse((o) => { if ((o as THREE.Mesh).isMesh) parts.push(o as THREE.Mesh); });
+    parts.forEach((m) => { m.renderOrder = 20; const g = new THREE.Mesh(m.geometry, ghostM); g.renderOrder = 10; m.add(g); });
     const coinGeo = new THREE.CylinderGeometry(9, 9, 2.5, 32), coinMat = new THREE.MeshStandardMaterial({ color: '#f6c445', metalness: 0.9, roughness: 0.25, emissive: '#7a5200', emissiveIntensity: 0.5 });
     const coins = PLACES.map((pl) => { const m = new THREE.Mesh(coinGeo, coinMat); m.rotation.x = Math.PI / 2; m.position.copy(v3(pl, topOf(pl.id) + 34)); m.userData.id = pl.id; scene.add(m); return m; });
     const mark = new THREE.Sprite(new THREE.SpriteMaterial({ map: markTex(), depthTest: false })); mark.scale.set(30, 60, 1); scene.add(mark);

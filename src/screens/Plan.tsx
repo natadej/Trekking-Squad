@@ -29,7 +29,7 @@ export default function Plan({ p, plan, onRemove, onAdd, onCalendar, onReset }: 
     <div className="screen">
       <div className="card">
         <h1>🗓️ Trip plan</h1>
-        <p className="muted">Every day is a level. I planned each hour with travel time, food and rest. Tap ✕ to skip something.</p>
+        <p className="muted">Each hour is planned with travel time, food and rest. Tap ✕ to skip something.</p>
         <div className="row">
           <button className="btn primary" onClick={onCalendar}>📅 Put it in my calendar</button>
           <button className="btn ghost small" onClick={onReset}>↺ Re-plan</button>
