@@ -457,7 +457,7 @@ details.start[open] summary { margin-bottom: 12px; }
 .tro-big { display: flex; align-items: center; gap: 14px; margin: 10px 0; } .tro-big > span { font-size: 3rem; } .tro-big b { font-size: 1.8rem; }
 .tro-grp h2 { font-size: 1.05rem; margin: 16px 4px 6px; } .tro-grp h2 small { font-weight: 500; color: #6b7280; font-size: .8rem; }
 .tro-grp.gold h2 { color: #b7791f; } .tro-grp.silver h2 { color: #64748b; } .tro-grp.bronze h2 { color: #9a5b2c; }
-.gps-only { position: absolute; left: 12px; bottom: 14px; max-width: 58%; z-index: 4; background: rgba(17, 24, 39, .82); color: #fff; padding: 10px 12px; border-radius: 14px; font-size: .9rem; line-height: 1.3; }
+.gps-only { position: absolute; left: 10px; top: 56px; max-width: 52%; z-index: 4; background: rgba(17, 24, 39, .82); color: #fff; padding: 10px 12px; border-radius: 14px; font-size: .9rem; line-height: 1.3; }
 .plate.sight { background: linear-gradient(135deg, #7c3aed, #db2777); color: #fff; border-color: #fcd34d; }
 .map3d .map-zoom { bottom: 64px; gap: 5px; }
 .map3d .map-zoom button { width: 40px; height: 40px; }
