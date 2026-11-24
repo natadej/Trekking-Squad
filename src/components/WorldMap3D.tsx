@@ -33,7 +33,7 @@ function curb(ll: LL) {
   for (let i = 1; i < STRIP_ROAD.length; i++) {
     const a = v3({ lat: STRIP_ROAD[i - 1][0], lng: STRIP_ROAD[i - 1][1] }), b = v3({ lat: STRIP_ROAD[i][0], lng: STRIP_ROAD[i][1] });
     const ab = b.clone().sub(a), t = THREE.MathUtils.clamp(p.clone().sub(a).dot(ab) / ab.lengthSq(), 0, 1), q = a.addScaledVector(ab, t), d = q.distanceTo(p);
-    if (d < bd) { bd = d; best = q.addScaledVector(p.clone().sub(q).normalize(), 16); }
+    if (d < bd) { bd = d; best = q.addScaledVector(p.clone().sub(q).normalize(), 27); }
   }
   return bd < 700 ? best : p;
 }
@@ -162,6 +162,11 @@ export default function WorldMap3D(props: Props) {
       tmp.copy(headV).project(camera); const hy = ((1 - tmp.y) / 2) * h, half = Math.max(14, (fy - hy) * 0.3);
       return { l: fx - half, r: fx + half, t: hy - 26, b: fy };
     };
+    let ctrl: R[] = [];
+    const readCtrl = () => {
+      const o = el.getBoundingClientRect();
+      ctrl = [...el.querySelectorAll('.minimap, .wmini, .joy, .map-zoom, .m3-toggle, .next-hint')].map((n) => { const r = n.getBoundingClientRect(); return { l: r.left - o.left, r: r.right - o.left, t: r.top - o.top, b: r.bottom - o.top }; });
+    };
     const last = { t: performance.now(), poi: 0, key: '' };
     let raf = 0;
     const loop = (t: number) => {
@@ -200,11 +205,11 @@ export default function WorldMap3D(props: Props) {
       W.update(t, dt);
       if (hq) composer.render(); else renderer.render(scene, camera);
       place(tagEl.current, headV);
-      const taken: R[] = [heroRect()];
+      const taken: R[] = [heroRect(), ...ctrl];
       PLACES.forEach((pl) => place(labelEls.current[pl.id], anchors[pl.id], C.dist < 900 ? 2600 : 1e9, taken));
       for (const node of Object.values(poiEls.current)) if (node) place(node, new THREE.Vector3(Number(node.dataset.x), PODIUM + 6, Number(node.dataset.z)), 1e9, taken);
       if (t - last.poi > 400) {
-        last.poi = t;
+        last.poi = t; readCtrl();
         const c = fromM(O, C.target.x, C.target.z), hp = fromM(O, C.pos.x, C.pos.z);
         const list = C.dist > 700 ? [] : p.world.pois.filter((x) => p.kinds.has(x.k)).map((x) => ({ x, d: distanceM(c, x) })).filter((o) => o.d < Math.max(150, C.dist * 0.6)).sort((a, b) => a.d - b.d).slice(0, 14).map((o) => o.x);
         const key = list.map((x) => x.n + x.lat).join('|');
