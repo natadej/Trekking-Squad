@@ -28,7 +28,7 @@ export default function Plan({ p, plan, onRemove, onAdd, onCalendar, onReset }: 
   return (
     <div className="screen">
       <div className="card">
-        <h1>🗓️ Level map</h1>
+        <h1>🗓️ Trip plan</h1>
         <p className="muted">Every day is a level. I planned each hour with travel time, food and rest. Tap ✕ to skip something.</p>
         <div className="row">
           <button className="btn primary" onClick={onCalendar}>📅 Put it in my calendar</button>
@@ -38,7 +38,7 @@ export default function Plan({ p, plan, onRemove, onAdd, onCalendar, onReset }: 
       <div className="days" role="tablist">
         {days.map((d, n) => (
           <button key={d} role="tab" aria-selected={d === day} className={`day ${d === day ? 'on' : ''}`} onClick={() => setDay(d)}>
-            <small>LEVEL {n + 1}</small>{dayLabel(d).split(' ')[0]}<small>{dayLabel(d, true).split(', ')[1]}</small>
+            <small>DAY {n + 1}</small>{dayLabel(d).split(' ')[0]}<small>{dayLabel(d, true).split(', ')[1]}</small>
           </button>
         ))}
       </div>
