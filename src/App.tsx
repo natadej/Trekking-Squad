@@ -3,7 +3,7 @@ import type { Avatar, PlanItem, Prefs, Profile, Session, Trip } from './types';
 import { loadProfile, questPoints, saveProfile } from './profile';
 import { buildPlan } from './planner';
 import { toIcs } from './ics';
-import { cloud, googleEnabled, loadRemote, saveRemote, signInGoogle, signOutCloud, stepStats, syncCode, loadSyncCode, watchLeaders, watchUser, type CloudUser, type Leader } from './cloud';
+import { cloud, googleEnabled, loadRemote, saveRemote, signOutCloud, stepStats, syncCode, loadSyncCode, watchLeaders, watchUser, type CloudUser, type Leader } from './cloud';
 import Welcome from './screens/Welcome';
 import { COLLECT_RADIUS_M, distanceM, placeById, type Place } from './data/places';
 import { nowPT } from './time';
@@ -16,6 +16,7 @@ import Leaders from './screens/Leaders';
 import ImportSheet from './screens/ImportSheet';
 import ShopScreen from './screens/ShopScreen';
 import { startMotionSteps } from './steps';
+import GoogleButton from './components/GoogleButton';
 import { STEP_M, type Area } from './data/shops';
 
 const TABS = [
@@ -219,7 +220,7 @@ export default function App() {
         <p>✅ Signed in with Google{user.email ? <> as <b>{user.email}</b></> : ''}. Sign in on any phone to continue.</p>
         <button className="btn small ghost" onClick={signOutCloud}>Sign out</button>
       </> : <>
-        {google && <button className="btn google big" onClick={signInGoogle}><span className="g-logo" aria-hidden>G</span> Continue with Google</button>}
+        {google && <GoogleButton onError={(e) => say('⚠️ ' + e.message)} />}
         <p className="muted">✅ Your profile is saved online automatically. To use it on another phone or computer, copy this code there.</p>
         <p className="sync-code"><code>{syncCode()}</code></p>
         <button className="btn ghost" onClick={() => navigator.clipboard?.writeText(syncCode()).then(() => say('📋 Code copied. Keep it private.'), () => say('Copy did not work. Select the code and copy it.'))}>📋 Copy my code</button>
@@ -239,7 +240,7 @@ export default function App() {
 
   if (!p.onboarded) return (
     <div className="app">
-      <Welcome p={p} user={user} google={google} onGoogle={signInGoogle} onDone={(x) => { update((o) => ({ ...o, ...x, onboarded: true })); startSteps(); say('👟 Ready. Walk to climb the ranking!', true); }} />
+      <Welcome p={p} user={user} google={google} onError={(e) => say('⚠️ ' + e.message)} onDone={(x) => { update((o) => ({ ...o, ...x, onboarded: true })); startSteps(); say('👟 Ready. Walk to climb the ranking!', true); }} />
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
   );

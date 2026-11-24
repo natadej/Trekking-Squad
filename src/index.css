@@ -454,6 +454,7 @@ details.start[open] summary { margin-bottom: 12px; }
 .wl-card input { font: inherit; font-size: 1.15rem; padding: 12px 14px; border-radius: 14px; border: 2px solid #e5e0f5; }
 .btn.google { background: #fff; color: #1f2937; border: 2px solid #e5e7eb; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .g-logo { font-weight: 900; font-size: 1.2rem; background: conic-gradient(#ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.google-btn { display: flex; justify-content: center; min-height: 44px; margin-bottom: 10px; }
 .tro-big { display: flex; align-items: center; gap: 14px; margin: 10px 0; } .tro-big > span { font-size: 3rem; } .tro-big b { font-size: 1.8rem; }
 .tro-grp h2 { font-size: 1.05rem; margin: 16px 4px 6px; } .tro-grp h2 small { font-weight: 500; color: #6b7280; font-size: .8rem; }
 .tro-grp.gold h2 { color: #b7791f; } .tro-grp.silver h2 { color: #64748b; } .tro-grp.bronze h2 { color: #9a5b2c; }

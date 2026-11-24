@@ -7,6 +7,7 @@ import { contestAvg, goalsOf } from './trophy';
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const ID_KEY = 'tsq.id.v1';
+const GOOGLE_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
 export interface CloudUser { uid: string; secret: string; isAnonymous: boolean; email?: string }
 export interface Leader { uid: string; nick: string; points: number; avatar: Avatar; coins: number; stepsDay?: string; stepsToday?: number; stepsTotal?: number; avg?: number; days?: number; goalDay?: number; goalTrip?: number }
@@ -39,30 +40,54 @@ let listener: ((u: CloudUser | null) => void) | undefined;
 export function watchUser(cb: (u: CloudUser | null) => void) {
   listener = cb;
   if (!cloud()) { cb(null); return () => { listener = undefined; }; }
-  finishGoogle().catch(() => undefined).finally(() => listener?.(identity()));
+  cb(identity());
   return () => { listener = undefined; };
 }
 
 /** True when Google (OpenID) sign-in is switched on in Supabase Auth. */
 export async function googleEnabled() {
   const c = cloud();
-  if (!c) return false;
+  if (!c || !GOOGLE_ID) return false;
   try { const r = await fetch(`${c.url}/auth/v1/settings`, { headers: { apikey: c.key } }); return !!(await r.json())?.external?.google; } catch { return false; }
 }
-export function signInGoogle() {
+
+interface Gsi { accounts: { id: { initialize: (o: object) => void; renderButton: (el: HTMLElement, o: object) => void } } }
+let gsi: Promise<Gsi> | undefined;
+const loadGsi = () => (gsi ??= new Promise<Gsi>((ok, no) => {
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.async = true;
+  s.onload = () => ok((window as unknown as { google: Gsi }).google);
+  s.onerror = () => { gsi = undefined; no(new Error('Google sign-in could not load')); };
+  document.head.appendChild(s);
+}));
+const sha256 = async (t: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t))), (b) => b.toString(16).padStart(2, '0')).join('');
+
+/** Google's own sign-in button (shows this site's name, not the Supabase address). */
+export async function renderGoogleButton(el: HTMLElement, onError: (e: Error) => void) {
   const c = cloud();
-  if (!c) return;
-  location.href = `${c.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + location.pathname)}`;
+  if (!c || !GOOGLE_ID) return;
+  const g = await loadGsi();
+  const nonce = hex(16);
+  g.accounts.id.initialize({
+    client_id: GOOGLE_ID, nonce: await sha256(nonce), ux_mode: 'popup', use_fedcm_for_button: true,
+    callback: (r: { credential: string }) => finishGoogle(r.credential, nonce).catch(onError),
+  });
+  g.accounts.id.renderButton(el, { theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', width: Math.min(400, el.clientWidth || 320) });
 }
-/** After Google redirects back, swap the access token for this player's id + secret. */
-async function finishGoogle() {
-  const h = new URLSearchParams(location.hash.slice(1)), token = h.get('access_token');
-  if (!token) return;
-  history.replaceState(null, '', location.pathname + location.search);
-  const id = await rpc<{ uid: string; secret: string }>('tsq_google_identity', {}, token);
-  let email: string | undefined;
-  try { email = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email; } catch { /* no email */ }
-  localStorage.setItem(ID_KEY, JSON.stringify({ ...id, google: true, email }));
+
+/** Swap Google's ID token for a Supabase session, then for this player's id + secret. */
+async function finishGoogle(idToken: string, nonce: string) {
+  const c = cloud()!;
+  const r = await fetch(`${c.url}/auth/v1/token?grant_type=id_token`, {
+    method: 'POST', headers: { apikey: c.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider: 'google', id_token: idToken, nonce }),
+  });
+  if (!r.ok) throw new Error(`Google sign-in failed (${r.status})`);
+  const s = (await r.json()) as { access_token: string; user?: { email?: string } };
+  const id = await rpc<{ uid: string; secret: string }>('tsq_google_identity', {}, s.access_token);
+  localStorage.setItem(ID_KEY, JSON.stringify({ ...id, google: true, email: s.user?.email }));
+  listener?.(identity());
 }
 export function signOutCloud() {
   localStorage.removeItem(ID_KEY);

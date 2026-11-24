@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import GoogleButton from '../components/GoogleButton';
 import type { Profile } from '../types';
 import type { CloudUser } from '../cloud';
 import { CONTEST_DAYS, CONTEST_LABEL, TROPHIES, goalsOf } from '../trophy';
@@ -7,14 +8,16 @@ interface Props {
   p: Profile;
   user: CloudUser | null;
   google: boolean;
-  onGoogle: () => void;
+  onError: (e: Error) => void;
   onDone: (x: { nick: string; goalDay: number; goalTrip: number }) => void;
 }
 
 const num = (v: FormDataEntryValue | null, d: number) => { const n = Math.round(Number(String(v ?? '').replace(/[^\d]/g, ''))); return n > 0 ? n : d; };
 
-export default function Welcome({ p, user, google, onGoogle, onDone }: Props) {
+export default function Welcome({ p, user, google, onError, onDone }: Props) {
   const [step, setStep] = useState<'login' | 'goals'>(user && !user.isAnonymous ? 'goals' : 'login');
+  const signedIn = !!user && !user.isAnonymous;
+  useEffect(() => { if (signedIn) setStep('goals'); }, [signedIn]);
   const g = goalsOf(p);
   return (
     <div className="welcome">
@@ -28,7 +31,7 @@ export default function Welcome({ p, user, google, onGoogle, onDone }: Props) {
       {step === 'login' ? (
         <div className="card wl-card">
           <h2>Start</h2>
-          {google && <button className="btn google big" onClick={onGoogle}><span className="g-logo" aria-hidden>G</span> Continue with Google</button>}
+          {google && <GoogleButton onError={onError} />}
           <button className="btn primary big" onClick={() => setStep('goals')}>👟 Play as guest</button>
           <p className="small muted">{google ? 'Google keeps your steps on every device.' : 'Your steps are saved online. You can move them to another phone later from Profile.'}</p>
         </div>
