@@ -231,7 +231,7 @@ export default function App() {
         </div>
       )}
       {tab === 'map' && mapMode === 'shop' && <ShopScreen p={p} me={me} stepsToday={stepsToday} counting={counting} startSteps={startSteps} collectSpot={collectSpot} addPlan={addPlan} toggleWish={toggleWish} />}
-      {tab === 'map' && mapMode === 'strip' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} />}
+      {tab === 'map' && mapMode === 'strip' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} addPlan={addPlan} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} />}
       {tab === 'classes' && <Classes p={p} sessions={sessions} planned={new Set(plan.map((i) => i.code).filter(Boolean) as string[])}
         setPrefs={(f: (x: Prefs) => Prefs) => update((x) => ({ ...x, prefs: f(x.prefs) }))}
         toggle={(c) => update((x) => (x.added.includes(c) ? { ...x, added: x.added.filter((y) => y !== c) } : { ...x, added: [...x.added, c], removed: x.removed.filter((y) => y !== c) }))} />}

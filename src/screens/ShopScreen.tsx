@@ -26,7 +26,7 @@ const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const dayName = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 const steps = (n: number) => `${n.toLocaleString()} steps`;
 
-function AddToPlan({ p, title, note, onAdd }: { p: Profile; title: string; note: string; onAdd: (i: PlanItem) => void }) {
+export function AddToPlan({ p, title, note, onAdd }: { p: Profile; title: string; note: string; onAdd: (i: PlanItem) => void }) {
   const days = tripDays(p.trip);
   const [day, setDay] = useState(days[0]);
   const [start, setStart] = useState(19 * 60);

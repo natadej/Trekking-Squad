@@ -9,7 +9,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,json}'], maximumFileSizeToCacheInBytes: 8 * 1024 * 1024 },
+      workbox: { globPatterns: ['**/*.{js,css,html,svg,json,jpg}'], maximumFileSizeToCacheInBytes: 8 * 1024 * 1024 },
       manifest: {
         name: 'Trekking Squad: RIV2026 at Vegas',
         short_name: 'Trekking Squad',

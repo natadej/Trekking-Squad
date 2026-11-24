@@ -1,6 +1,6 @@
 import type { PlanItem, Profile } from '../types';
 import Hero from '../components/Hero';
-import { LOOKS } from '../data/looks';
+import { photoUrl } from '../data/placeInfo';
 import { QUESTS } from '../profile';
 import { dayLabel, hm, nowPT } from '../time';
 import { KIND, YesNo, mapsLink, placeName, uberLink } from '../ui';
@@ -39,17 +39,32 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
 
   return (
     <div className="screen">
-      <div className="hello card">
-        <Hero a={p.avatar} size={130} wave />
-        <div>
-          <p className="label">Your trip · {(LOOKS.job[p.avatar.job ?? 0] ?? LOOKS.job[0]).name} style</p>
-          <h1>{p.nick}</h1>
-          <p className="muted">{daysTo > 0 ? `${daysTo} days until re:Invent in Las Vegas` : 'Your Las Vegas trip is underway'}</p>
-          <div className="chips">
-            <span className="chip gold">🪙 {p.points.toLocaleString()} points</span>
-            <span className="chip">🪙 {p.coins.length} places</span>
+      {(() => {
+        const st = p.steps?.[now.day] ?? 0, pct = Math.min(1, st / 10000), R = 52, L = 2 * Math.PI * R;
+        return (
+          <div className="hero-banner">
+            <div className="hb-left">
+              <Hero a={p.avatar} size={96} wave />
+              <div>
+                <h1>Hi, {p.nick.split(' ')[0]}</h1>
+                <p>{daysTo > 0 ? `${daysTo} days to re:Invent` : 'Your Vegas trip is on'}</p>
+                <span className="hb-pts">🪙 {p.points.toLocaleString()} pts · {p.coins.length} places</span>
+              </div>
+            </div>
+            <button className="ring" onClick={() => go('top')} aria-label={`${st} of 10,000 steps today. Open the leaderboard`}>
+              <svg viewBox="0 0 120 120" aria-hidden><defs><linearGradient id="rg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="#fbbf24" /><stop offset="1" stopColor="#f472b6" /></linearGradient></defs>
+                <circle cx="60" cy="60" r={R} className="ring-bg" /><circle cx="60" cy="60" r={R} className="ring-fg" stroke="url(#rg)" strokeDasharray={L} strokeDashoffset={L * (1 - pct)} /></svg>
+              <span><b>{st.toLocaleString()}</b><small>of 10k steps</small></span>
+            </button>
           </div>
-        </div>
+        );
+      })()}
+
+      <div className="quick">
+        <button onClick={() => go('map')} className="q-map"><span>🗺️</span>3D map</button>
+        <button onClick={() => go('plan')} className="q-plan"><span>🗓️</span>Trip plan</button>
+        <button onClick={() => go('top')} className="q-top"><span>🏆</span>Leaders</button>
+        <button onClick={onImport} className="q-mail"><span>📩</span>Add booking</button>
       </div>
 
       {checkIn && (
@@ -61,6 +76,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
 
       {next && (
         <div className={`card next ${KIND[next.kind].cls}`}>
+          {photoUrl(next.place) && <div className="next-photo" style={{ backgroundImage: `url(${photoUrl(next.place)})` }} />}
           <p className="label">{daysTo > 0 ? 'First on your plan' : 'Next on your plan'}</p>
           <h2>{KIND[next.kind].icon} {next.title}</h2>
           <p>{dayLabel(next.day, true)} · {hm(next.start)}{placeName(next) ? ` · ${placeName(next)}` : ''}</p>
@@ -73,18 +89,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
         </div>
       )}
 
-      {(() => {
-        const s = p.steps?.[now.day] ?? 0;
-        return (
-          <div className="card">
-            <h2>👣 Today's walk</h2>
-            <p className="steps-line"><b>{s.toLocaleString()}</b> of 10,000 steps · {((s * 0.75) / 1000).toFixed(1)} km</p>
-            <div className="bar" aria-hidden><i style={{ width: `${Math.min(100, s / 100)}%` }} /></div>
-            <p className="small muted">{TIPS[Math.floor(now.min / 60) % TIPS.length]}</p>
-            <button className="btn ghost" onClick={() => go('top')}>🏆 Step leaderboard</button>
-          </div>
-        );
-      })()}
+      <p className="tip health">{TIPS[Math.floor(now.min / 60) % TIPS.length]}</p>
 
       {q && <YesNo key={q.id} icon={q.icon} q={q.q} yes={q.yes} no={q.no} onYes={q.onYes} onNo={q.onNo} />}
 
@@ -95,12 +100,11 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
           <li>{t.hotelId ? <>🏨 <b>{hotelName(t.hotelId)}</b>{t.hotelIn ? ` · ${dayLabel(t.hotelIn)} to ${dayLabel(t.hotelOut || t.hotelIn)}` : ''}</> : <span className="muted">🏨 No hotel yet</span>}</li>
           <li>{t.depart ? <>🏠 Fly home <b>{dayLabel(t.depart.depDate)} {hm(t.depart.depTime)}</b> · {t.depart.number}</> : <span className="muted">🏠 No flight home yet</span>}</li>
         </ul>
-        <button className="btn primary big" onClick={onImport}>📩 Add a booking email</button>
-        <p className="muted small">Paste or forward a flight or hotel confirmation. The details are filled in for you.</p>
+        <button className="btn ghost" onClick={onImport}>📩 Add a booking email</button>
       </div>
 
-      <div className="card">
-        <h2>✅ Getting started</h2>
+      <details className="card start">
+        <summary><h2>✅ Getting started</h2></summary>
         <ul className="quests">
           {QUESTS.map((x) => {
             const done = p.quests.includes(x.id);
@@ -113,7 +117,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
             );
           })}
         </ul>
-      </div>
+      </details>
     </div>
   );
 }

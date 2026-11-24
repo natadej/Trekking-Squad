@@ -3,7 +3,7 @@ import type { PlanItem, Profile } from '../types';
 import WorldMap from '../components/WorldMap';
 import { COLLECT_RADIUS_M, PLACES, distanceM, placeById, type Place } from '../data/places';
 import { POI_ICON, POI_LABEL, bookingAt, hostName, loadWorld, type Poi, type PoiKind, type World } from '../data/world';
-import { mapsLink } from '../ui';
+import PlaceCard from '../components/PlaceCard';
 
 const WorldMap3D = lazy(() => import('../components/WorldMap3D'));
 
@@ -14,6 +14,7 @@ interface Props {
   startGps: () => void;
   collect: (pl: Place) => void;
   today: PlanItem[];
+  addPlan: (i: PlanItem) => void;
 }
 
 const fmt = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1609).toFixed(1)} miles`);
@@ -27,7 +28,7 @@ function vegasNow() {
   return { day: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`, min: t.getHours() * 60 + t.getMinutes() };
 }
 
-export default function MapScreen({ p, me, gpsError, startGps, collect, today }: Props) {
+export default function MapScreen({ p, me, gpsError, startGps, collect, today, addPlan }: Props) {
   const [pick, setPick] = useState<Place>();
   const [poi, setPoi] = useState<Poi>();
   const [world, setWorld] = useState<World>();
@@ -54,20 +55,17 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today }:
 
   return (
     <div className="screen">
-      <div className="card">
-        <h1>🗺️ RIV2026 3D world</h1>
-        <p className="muted">Drag to move, pinch to zoom, twist or use ⟲ ⟳ to turn. Follow the gold ❗ to your next stop. {PLACES.filter((x) => got.has(x.id)).length}/{PLACES.length} coins collected!</p>
-        {!me && <button className="btn primary big" onClick={startGps}>📍 Show me on the map</button>}
-        {gpsError && <p className="tip">⚠️ {gpsError}</p>}
-        {near && (near.d < 20000
-          ? <p className="tip">📍 Closest: <b>{near.pl.short}</b>, {fmt(near.d)} away</p>
-          : <p className="tip">📍 You are not in Vegas yet. Your marker is at {home.short}!</p>)}
-        {near && canGet(near.pl) && <button className="btn yes big pop" onClick={() => collect(near.pl)}>🪙 Collect {near.pl.coins} coins at {near.pl.short}!</button>}
-        <div className="chips cats" role="group" aria-label="Show on map">
-          {KINDS.map((k) => (
-            <button key={k} className={`chip ${kinds.has(k) ? 'on' : ''}`} aria-pressed={kinds.has(k)} onClick={() => toggle(k)}>{POI_ICON[k]} {POI_LABEL[k]}</button>
-          ))}
-        </div>
+      <div className="map-bar">
+        <div className="map-stat"><b>{PLACES.filter((x) => got.has(x.id)).length}<small>/{PLACES.length}</small></b><span>places collected</span></div>
+        {!me ? <button className="btn primary" onClick={startGps}>📍 Find me</button>
+          : near && <span className="map-near">📍 {near.d < 20000 ? <><b>{near.pl.short}</b> · {fmt(near.d)}</> : <>Not in Vegas yet</>}</span>}
+      </div>
+      {gpsError && <p className="tip">⚠️ {gpsError}</p>}
+      {near && canGet(near.pl) && <button className="btn gold big pop" onClick={() => collect(near.pl)}>🪙 Collect +{near.pl.coins} at {near.pl.short}</button>}
+      <div className="chips cats" role="group" aria-label="Show on map">
+        {KINDS.map((k) => (
+          <button key={k} className={`chip ${kinds.has(k) ? 'on' : ''}`} aria-pressed={kinds.has(k)} onClick={() => toggle(k)}>{POI_ICON[k]} {POI_LABEL[k]}</button>
+        ))}
       </div>
 
       {(() => {
@@ -84,39 +82,10 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today }:
           )}
         </>;
       })()}
-      <p className="map-key muted">🔒 = booked for an AWS or partner event · 🤝 partner spot · ⭐ AWS zone · tap any building to see what's inside</p>
+      <p className="map-key muted">Tap any building for photos and what's inside. 🔒 = booked for an event.</p>
 
-      {pick && (
-        <div className="sheet-bg" onClick={() => setPick(undefined)}>
-          <div className="sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-head">
-              <h2>{pick.icon} {pick.name}</h2>
-              <button className="x" aria-label="Close" onClick={() => setPick(undefined)}>✕</button>
-            </div>
-            <p>{pick.fact}</p>
-            <p className="chips">
-              <span className={`chip ${got.has(pick.id) ? 'on' : 'gold'}`}>{got.has(pick.id) ? '✅ Coins collected' : `🪙 ${pick.coins} coins here`}</span>
-              {me && <span className="chip">{fmt(distanceM(me, pick))} away</span>}
-            </p>
-            {pick.eats?.length ? <>
-              <h3 style={{ marginTop: 10 }}>👍 Our food picks</h3>
-              <ul>{pick.eats.map((e) => <li key={e.name}><b>{e.name}</b> · {e.food}{e.kids ? ' · 👧 kid-friendly' : ''}</li>)}</ul>
-            </> : null}
-            {inside(pick).length > 0 && <>
-              <h3 style={{ marginTop: 10 }}>🏬 Inside {pick.short} ({inside(pick).length})</h3>
-              <ul className="inside">{inside(pick).map((x) => (
-                <li key={x.n + x.lat}><button className="link" onClick={() => { setPick(undefined); setPoi(x); }}>
-                  {POI_ICON[x.k]} <b>{x.n}</b>{x.c ? ` · ${x.c}` : ''}{booked(x) ? ' · 🔒 event' : ''}
-                </button></li>
-              ))}</ul>
-            </>}
-            <div className="row">
-              <a className="btn" href={mapsLink(pick.id)} target="_blank" rel="noreferrer">🧭 Walk there</a>
-              {canGet(pick) && <button className="btn yes" onClick={() => { collect(pick); setPick(undefined); }}>🪙 Collect!</button>}
-            </div>
-          </div>
-        </div>
-      )}
+      {pick && <PlaceCard place={pick} p={p} addPlan={addPlan} inside={inside(pick)} collected={got.has(pick.id)} distance={me ? distanceM(me, pick) : undefined} canCollect={canGet(pick)} booked={booked}
+        onPoi={(x) => { setPick(undefined); setPoi(x); }} onCollect={() => { collect(pick); setPick(undefined); }} onClose={() => setPick(undefined)} />}
 
       {poi && (
         <div className="sheet-bg" onClick={() => setPoi(undefined)}>
