@@ -1,3 +1,4 @@
+import { cloud } from '../cloud';
 import { useState } from 'react';
 import { stepStats, type Leader } from '../cloud';
 import type { Profile } from '../types';
@@ -18,7 +19,7 @@ export default function Leaders({ p, rows, uid, live, counting, startSteps }: Pr
     <div className="screen">
       <div className="card">
         <h1>🏆 Step leaderboard</h1>
-        <p className="muted">{live ? '🟢 Live! Steps update by themselves.' : '⚪ Back up your profile online to join the world ranking.'}</p>
+        <p className="muted">{live ? '🟢 Live! Steps update by themselves.' : cloud() ? '⚪ Back up your profile online to join the world ranking.' : '⚪ This phone only for now. The world ranking turns on when online save is set up.'}</p>
         <p className="small muted">Walk around Vegas to climb. Visiting shops and places gives bonus points. Only display names are shown.</p>
         {!counting && <button className="btn primary big" onClick={startSteps}>👣 Start counting my steps</button>}
       </div>

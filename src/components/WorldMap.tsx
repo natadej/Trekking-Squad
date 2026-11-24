@@ -126,6 +126,15 @@ export default function WorldMap({ world, me, avatar, nick, collected, focus, ne
               {z >= 1 && b.n && <text x={cp.x} y={cp.y} textAnchor="middle" className="bld-label">{b.n.replace(/ (Hotel|Resort).*$/, '').slice(0, 22)}</text>}</g>;
           })}
 
+          {pois.map(({ p, x, y, label }) => (
+            <g key={p.n + p.p + p.lat} className="poi" role="button" aria-label={`${p.n}${booked(p) ? ', booked for an event' : ''}`} onClick={tap(() => onPoi(p))}>
+              <rect x={x - 10} y={y - 10} width="20" height="20" rx="5" fill={p.k === 'partner' ? '#ffe58a' : p.k === 'aws' ? '#ffc27a' : '#fffdf6'} stroke="#6f80ad" strokeWidth="2" />
+              <text x={x} y={y + 5} textAnchor="middle" fontSize="12">{POI_ICON[p.k]}</text>
+              {booked(p) && <text x={x + 10} y={y - 6} fontSize="10">🔒</text>}
+              {label && <text x={x} y={y + 20} textAnchor="middle" className="poi-label">{p.n.length > 18 ? p.n.slice(0, 17) + '…' : p.n}</text>}
+            </g>
+          ))}
+
           {PLACES.map((pl) => {
             const rings = world?.fp[pl.id] ?? [];
             const c = P(pl.lat, pl.lng);
@@ -147,15 +156,6 @@ export default function WorldMap({ world, me, avatar, nick, collected, focus, ne
               </g>
             );
           })}
-
-          {pois.map(({ p, x, y, label }) => (
-            <g key={p.n + p.p + p.lat} className="poi" role="button" aria-label={`${p.n}${booked(p) ? ', booked for an event' : ''}`} onClick={tap(() => onPoi(p))}>
-              <rect x={x - 10} y={y - 10} width="20" height="20" rx="5" fill={p.k === 'partner' ? '#ffe58a' : p.k === 'aws' ? '#ffc27a' : '#fffdf6'} stroke="#6f80ad" strokeWidth="2" />
-              <text x={x} y={y + 5} textAnchor="middle" fontSize="12">{POI_ICON[p.k]}</text>
-              {booked(p) && <text x={x + 10} y={y - 6} fontSize="10">🔒</text>}
-              {label && <text x={x} y={y + 20} textAnchor="middle" className="poi-label">{p.n.length > 18 ? p.n.slice(0, 17) + '…' : p.n}</text>}
-            </g>
-          ))}
 
           {next && nextPt && !nextOff && <g transform={`translate(${nextPt.x} ${nextPt.y - 46})`} className="coin-bob"><path d="M-8 -8 h16 v8 h6 l-14 12 l-14 -12 h6 z" fill="#4a7fd8" stroke="#fff" strokeWidth="2" /></g>}
           {edge && (
