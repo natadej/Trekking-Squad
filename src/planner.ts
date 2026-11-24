@@ -192,16 +192,6 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
       }
     }
 
-    // Me-time
-    if (p.trip.meTime !== false && hi > 17 * 60 + 30 && lo < 16 * 60) {
-      for (const s of [17 * 60 + 30, 16 * 60 + 30, 14 * 60]) {
-        if (fits(ctx, day, s, s + 60, hotel)) {
-          add(ctx, { id: 'me-' + day, day, start: s, end: s + 60, title: 'Me-time: rest, call home, recharge', kind: 'free', place: hotel });
-          break;
-        }
-      }
-    }
-
     // Dinner
     if (!ctx.items.some((i) => i.day === day && i.kind === 'meal' && i.start >= 17 * 60) && hi > 19 * 60 + 30 && lo < 19 * 60) {
       for (const s of [18 * 60 + 30, 19 * 60, 18 * 60, 20 * 60 + 45, 21 * 60]) {
@@ -217,7 +207,8 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
   if (fly && missed.length) fly.note = `You'll miss ${missed.join(' and ')}. A later flight lets you go! · ${fly.note}`;
 
   for (const c of p.custom) ctx.items.push(c);
-  return ctx.items.filter((i) => !removed.has(i.id)).sort((a, b) => (a.day + pad(a.start)).localeCompare(b.day + pad(b.start)));
+  const maybe = new Set(p.maybe ?? []);
+  return ctx.items.filter((i) => !removed.has(i.id)).map((i) => (maybe.has(i.id) ? { ...i, tentative: true } : i)).sort((a, b) => (a.day + pad(a.start)).localeCompare(b.day + pad(b.start)));
 }
 
 const pad = (n: number) => String(Math.max(0, n)).padStart(5, '0');

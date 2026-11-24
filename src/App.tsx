@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Avatar, PlanItem, Prefs, Profile, Session, Trip } from './types';
 import { loadProfile, questPoints, saveProfile } from './profile';
-import { buildPlan } from './planner';
+import { buildPlan, tripDays } from './planner';
+import { GCAL_PREFIX, syncCalendar } from './gcal';
 import { toIcs } from './ics';
 import { cloud, googleEnabled, loadRemote, saveRemote, signOutCloud, stepStats, syncCode, loadSyncCode, watchLeaders, watchUser, type CloudUser, type Leader } from './cloud';
 import Welcome from './screens/Welcome';
@@ -197,10 +198,28 @@ export default function App() {
   const questions: Question[] = [
     p.trip.arrive && !answered('pickup') && { id: 'pickup', icon: '🚗', q: 'When you land, is someone picking you up?', yes: 'Yes, a ride!', no: `No, take Uber to ${hotel}`, onYes: () => answer('pickup', (x) => ({ ...x, trip: { ...x.trip, pickup: 'friend' } })), onNo: () => answer('pickup', (x) => ({ ...x, trip: { ...x.trip, pickup: 'uber' } })) },
     p.trip.arrive && !answered('dinner') && { id: 'dinner', icon: '🍕', q: 'Want me to plan dinner the night you land?', onYes: () => answer('dinner', (x) => ({ ...x, trip: { ...x.trip, arrivalDinner: true } })), onNo: () => answer('dinner', (x) => ({ ...x, trip: { ...x.trip, arrivalDinner: false } })) },
-    !answered('metime') && { id: 'metime', icon: '😌', q: 'Add a 1-hour rest break every day?', onYes: () => answer('metime', (x) => ({ ...x, trip: { ...x.trip, meTime: true } })), onNo: () => answer('metime', (x) => ({ ...x, trip: { ...x.trip, meTime: false } })) },
     !answered('parties') && { id: 'parties', icon: '🎉', q: 'Go to the fun parties, like re:Play at the stadium?', onYes: () => answer('parties', (x) => ({ ...x, prefs: { ...x.prefs, parties: true } })), onNo: () => answer('parties', (x) => ({ ...x, prefs: { ...x.prefs, parties: false } })) },
     !answered('pace') && { id: 'pace', icon: '⚡', q: 'Want a super busy plan with up to 6 classes a day?', yes: 'Yes, max!', no: 'No, 4 is plenty', onYes: () => answer('pace', (x) => ({ ...x, prefs: { ...x.prefs, pace: 'busy' } })), onNo: () => answer('pace', (x) => ({ ...x, prefs: { ...x.prefs, pace: 'chill' } })) },
   ].filter(Boolean) as Question[];
+
+  const [syncing, setSyncing] = useState(false);
+  const syncCal = async () => {
+    setSyncing(true);
+    try {
+      const r = await syncCalendar(plan, tripDays(p.trip));
+      update((x) => {
+        const t: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(r.trip)) if (v !== undefined && x.trip[k as keyof Trip] === undefined) t[k] = v;
+        return { ...x, trip: { ...x.trip, ...t }, custom: [...x.custom.filter((c) => !c.id.startsWith(GCAL_PREFIX)), ...r.imported] };
+      });
+      award('calendar');
+      say(`📅 Synced: ${r.imported.length} events from your Google Calendar, ${r.changed} changes sent to it.`);
+    } catch (e) {
+      say('⚠️ ' + (e as Error).message);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const downloadCal = () => {
     const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
@@ -255,6 +274,11 @@ export default function App() {
       {tab === 'home' && <Home p={p} plan={plan} questions={questions} onImport={() => setImporting(true)} go={(t) => { if (t === 'map') setMapMode('strip'); setTab(t as Tab); scrollTo(0, 0); }} checkIn={checkIn} />}
       {tab === 'plan' && <Plan p={p} plan={plan}
         onRemove={(i) => update((x) => ({ ...x, removed: [...x.removed, i.code || i.id], added: x.added.filter((c) => c !== i.code), custom: x.custom.filter((c) => c.id !== i.id) }))}
+        onMaybe={(i, m) => update((x) => {
+          const rest = (x.maybe ?? []).filter((y) => y !== i.id);
+          return { ...x, maybe: m ? [...rest, i.id] : rest, custom: x.custom.map((c) => (c.id === i.id ? { ...c, tentative: m || undefined } : c)) };
+        })}
+        onSync={syncCal} syncing={syncing}
         onAdd={(i: PlanItem) => update((x) => ({ ...x, custom: [...x.custom, i] }))}
         onCalendar={downloadCal}
         onReset={() => update((x) => ({ ...x, removed: [], custom: x.custom }))} />}

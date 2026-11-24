@@ -40,7 +40,6 @@ export interface Trip {
   pickup?: Pickup;
   dropoff?: Pickup;
   arrivalDinner?: boolean;
-  meTime?: boolean;
 }
 
 export type ItemKind =
@@ -56,6 +55,8 @@ export interface PlanItem {
   place?: string;
   code?: string;
   note?: string;
+  /** "Maybe": shown and synced to calendars as tentative */
+  tentative?: boolean;
 }
 
 export interface Prefs {
@@ -97,6 +98,8 @@ export interface Profile {
   /** saved shops, "area|name" */
   wish: string[];
   calToken: string;
+  /** plan item ids the user answered "Maybe" */
+  maybe?: string[];
   /** step goals chosen on the welcome screen */
   goalDay?: number;
   goalTrip?: number;

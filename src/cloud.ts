@@ -7,7 +7,7 @@ import { contestAvg, goalsOf } from './trophy';
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const ID_KEY = 'tsq.id.v1';
-const GOOGLE_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+export const GOOGLE_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
 export interface CloudUser { uid: string; secret: string; isAnonymous: boolean; email?: string }
 export interface Leader { uid: string; nick: string; points: number; avatar: Avatar; coins: number; stepsDay?: string; stepsToday?: number; stepsTotal?: number; avg?: number; days?: number; goalDay?: number; goalTrip?: number }
@@ -51,9 +51,13 @@ export async function googleEnabled() {
   try { const r = await fetch(`${c.url}/auth/v1/settings`, { headers: { apikey: c.key } }); return !!(await r.json())?.external?.google; } catch { return false; }
 }
 
-interface Gsi { accounts: { id: { initialize: (o: object) => void; renderButton: (el: HTMLElement, o: object) => void } } }
+export interface TokenReply { access_token?: string; expires_in?: number | string; error?: string; error_description?: string }
+interface Gsi { accounts: {
+  id: { initialize: (o: object) => void; renderButton: (el: HTMLElement, o: object) => void };
+  oauth2: { initTokenClient: (o: { client_id: string; scope: string; callback: (r: TokenReply) => void; error_callback?: (e: { type?: string; message?: string }) => void }) => { requestAccessToken: (o?: { prompt?: string }) => void } };
+} }
 let gsi: Promise<Gsi> | undefined;
-const loadGsi = () => (gsi ??= new Promise<Gsi>((ok, no) => {
+export const loadGsi = () => (gsi ??= new Promise<Gsi>((ok, no) => {
   const s = document.createElement('script');
   s.src = 'https://accounts.google.com/gsi/client';
   s.async = true;

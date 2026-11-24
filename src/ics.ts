@@ -17,6 +17,7 @@ export function toIcs(items: PlanItem[], name = 'Trekking Squad: RIV2026 at Vega
       `DTSTART:${stamp(ptToUtc(i.day, i.start))}`,
       `DTEND:${stamp(ptToUtc(i.day, Math.max(i.end, i.start + 5)))}`,
       `SUMMARY:${esc(i.title)}`,
+      `STATUS:${i.tentative ? 'TENTATIVE' : 'CONFIRMED'}`,
     );
     if (place) lines.push(`LOCATION:${esc(place.name + ', Las Vegas')}`, `GEO:${place.lat};${place.lng}`);
     const desc = [i.code, i.note].filter(Boolean).join(' · ');

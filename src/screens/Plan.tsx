@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { loadGsi } from '../cloud';
+import { calendarReady } from '../gcal';
 import type { PlanItem, Profile } from '../types';
 import { dayLabel, hm } from '../time';
 import { KIND, mapsLink, placeName, uberLink } from '../ui';
@@ -9,6 +11,9 @@ interface Props {
   p: Profile;
   plan: PlanItem[];
   onRemove: (i: PlanItem) => void;
+  onMaybe: (i: PlanItem, maybe: boolean) => void;
+  onSync: () => void;
+  syncing: boolean;
   onAdd: (i: PlanItem) => void;
   onCalendar: () => void;
   onReset: () => void;
@@ -16,7 +21,7 @@ interface Props {
 
 const toMin = (v: string) => { const [h, m] = v.split(':').map(Number); return h * 60 + m; };
 
-export default function Plan({ p, plan, onRemove, onAdd, onCalendar, onReset }: Props) {
+export default function Plan({ p, plan, onRemove, onMaybe, onSync, syncing, onAdd, onCalendar, onReset }: Props) {
   const days = tripDays(p.trip);
   const [day, setDay] = useState(() => days.find((d) => plan.some((i) => i.day === d)) || days[0]);
   const [adding, setAdding] = useState(false);
@@ -24,14 +29,17 @@ export default function Plan({ p, plan, onRemove, onAdd, onCalendar, onReset }: 
   const [start, setStart] = useState('12:00');
   const [len, setLen] = useState(60);
   const items = plan.filter((i) => i.day === day);
+  useEffect(() => { if (calendarReady()) loadGsi().catch(() => undefined); }, []);
 
   return (
     <div className="screen">
       <div className="card">
         <h1>🗓️ Trip plan</h1>
-        <p className="muted">Each hour is planned with travel time, food and rest. Tap ✕ to skip something.</p>
+        <p className="muted">Each hour is planned with travel time and food. Answer Yes, Maybe or No for each suggestion. Maybe shows as tentative in your calendar.</p>
+        {calendarReady() && <button className="btn primary big" disabled={syncing} onClick={onSync}>{syncing ? '⏳ Syncing…' : '🔄 Sync with Google Calendar'}</button>}
+        <p className="small muted">Brings in your Gmail bookings (flights, hotels, restaurants, shows) and puts this plan in your Google Calendar.</p>
         <div className="row">
-          <button className="btn primary" onClick={onCalendar}>📅 Put it in my calendar</button>
+          <button className="btn ghost" onClick={onCalendar}>📅 Download calendar file</button>
           <button className="btn ghost small" onClick={onReset}>↺ Re-plan</button>
         </div>
       </div>
@@ -52,10 +60,10 @@ export default function Plan({ p, plan, onRemove, onAdd, onCalendar, onReset }: 
           return (
             <li key={i.id}>
               {move > 0 && <div className="travel">{move >= 30 ? '🚕' : '🚶'} ~{move} min to {placeById(i.place)?.short}</div>}
-              <div className={`item ${k2.cls} ${clash ? 'clash' : ''}`}>
+              <div className={`item ${k2.cls} ${clash ? 'clash' : ''} ${i.tentative ? 'tentative' : ''}`}>
                 <div className="time">{hm(i.start)}<small>to {hm(i.end)}</small></div>
                 <div>
-                  <div className="kind">{k2.icon} {k2.label}{clash ? ' · ⚠️ overlaps!' : ''}</div>
+                  <div className="kind">{k2.icon} {k2.label}{i.tentative ? ' · Maybe' : ''}{clash ? ' · ⚠️ overlaps!' : ''}</div>
                   <div className="ttl">{i.title}</div>
                   <div className="meta">{[placeName(i), i.note].filter(Boolean).join(' · ')}</div>
                   <div className="row">
@@ -63,8 +71,14 @@ export default function Plan({ p, plan, onRemove, onAdd, onCalendar, onReset }: 
                     {i.kind === 'ride' && i.id === 'ride-in' && p.trip.pickup !== 'friend' && <a className="btn small" href={uberLink(p.trip.hotelId)} target="_blank" rel="noreferrer">🚗 Uber</a>}
                     {i.kind === 'ride' && i.id === 'ride-out' && <a className="btn small" href={uberLink('airport')} target="_blank" rel="noreferrer">🚗 Uber</a>}
                   </div>
+                  {!['flight', 'ride'].includes(i.kind) && (
+                    <div className="yn" role="group" aria-label={`Going to ${i.title}?`}>
+                      <button className={!i.tentative ? 'on' : ''} aria-pressed={!i.tentative} onClick={() => onMaybe(i, false)}>Yes</button>
+                      <button className={i.tentative ? 'on maybe' : ''} aria-pressed={!!i.tentative} onClick={() => onMaybe(i, true)}>Maybe</button>
+                      <button onClick={() => onRemove(i)}>No</button>
+                    </div>
+                  )}
                 </div>
-                {!['flight', 'ride'].includes(i.kind) && <button className="x" aria-label={`Skip ${i.title}`} onClick={() => onRemove(i)}>✕</button>}
               </div>
             </li>
           );
