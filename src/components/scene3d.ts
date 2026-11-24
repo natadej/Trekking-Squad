@@ -231,6 +231,8 @@ export interface Built {
   pick: THREE.Object3D[];
   update: (t: number, dt: number) => void;
   setNight: (n: boolean) => void;
+  /** hide street-level ground pieces in the far valley view */
+  setFar: (far: boolean) => void;
 }
 
 export function buildWorld(scene: THREE.Scene, world: World, renderer: THREE.WebGLRenderer, sun: THREE.DirectionalLight, hemi: THREE.HemisphereLight): Built {
@@ -430,6 +432,7 @@ export function buildWorld(scene: THREE.Scene, world: World, renderer: THREE.Web
   const tmpP = new THREE.Vector3(), tmpD = new THREE.Vector3();
   return {
     pick,
+    setFar(far) { ground.visible = !far; },
     update(t, dt) {
       for (let i = 0; i < 32; i++) {
         const a = (i / 31 - 0.5) * 2.6, hgt = 15 + 70 * Math.max(0, Math.sin(t / 450 + i * 0.45));

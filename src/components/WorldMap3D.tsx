@@ -194,7 +194,8 @@ export default function WorldMap3D(props: Props) {
       headV.set(C.pos.x, 15.5, C.pos.z);
       if (C.follow) C.target.lerp(C.pos, Math.min(1, dt * 6));
       // far zoom: tilt toward a top-down sky view and push fog/clip planes out
-      const far = THREE.MathUtils.smoothstep(C.dist, 3000, 30000), pitch = C.pitch + (1.5 - C.pitch) * far * 0.6;
+      const far = THREE.MathUtils.smoothstep(C.dist, 3000, 30000), pitch = C.pitch + (1.25 - C.pitch) * far * 0.6;
+      W.setFar(C.dist > 9000);
       const cp = Math.cos(pitch) * C.dist;
       const fg = scene.fog as THREE.Fog; fg.near = 1500 + C.dist * 1.2; fg.far = 7000 + C.dist * 4;
       const nr = Math.max(1, C.dist / 400); if (Math.abs(camera.near - nr) > nr * 0.2) { camera.near = nr; camera.far = Math.max(30000, C.dist * 8); camera.updateProjectionMatrix(); }
