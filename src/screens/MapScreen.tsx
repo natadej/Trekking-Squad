@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import type { PlanItem, Profile } from '../types';
 import WorldMap from '../components/WorldMap';
 import { COLLECT_RADIUS_M, PLACES, distanceM, placeById, type Place } from '../data/places';
 import { POI_ICON, POI_LABEL, bookingAt, hostName, loadWorld, type Poi, type PoiKind, type World } from '../data/world';
 import { mapsLink } from '../ui';
+
+const WorldMap3D = lazy(() => import('../components/WorldMap3D'));
 
 interface Props {
   p: Profile;
@@ -29,6 +31,7 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today }:
   const [pick, setPick] = useState<Place>();
   const [poi, setPoi] = useState<Poi>();
   const [world, setWorld] = useState<World>();
+  const [full, setFull] = useState(false);
   const [kinds, setKinds] = useState<Set<PoiKind>>(new Set(KINDS));
   useEffect(() => { loadWorld().then(setWorld).catch(() => undefined); }, []);
   const got = new Set(p.coins);
@@ -52,13 +55,13 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today }:
   return (
     <div className="screen">
       <div className="card">
-        <h1>🗺️ RIV2026 world map</h1>
-        <p className="muted">Drag to explore. The mini-map shows the whole Strip. {PLACES.filter((x) => got.has(x.id)).length}/{PLACES.length} coins collected!</p>
+        <h1>🗺️ RIV2026 3D world</h1>
+        <p className="muted">Drag to move, pinch to zoom, twist or use ⟲ ⟳ to turn. Follow the gold ❗ to your next stop. {PLACES.filter((x) => got.has(x.id)).length}/{PLACES.length} coins collected!</p>
         {!me && <button className="btn primary big" onClick={startGps}>📍 Show me on the map</button>}
         {gpsError && <p className="tip">⚠️ {gpsError}</p>}
         {near && (near.d < 20000
           ? <p className="tip">📍 Closest: <b>{near.pl.short}</b>, {fmt(near.d)} away</p>
-          : <p className="tip">📍 You are not in Vegas yet. Your hero waits at {home.short}!</p>)}
+          : <p className="tip">📍 You are not in Vegas yet. Your marker is at {home.short}!</p>)}
         {near && canGet(near.pl) && <button className="btn yes big pop" onClick={() => collect(near.pl)}>🪙 Collect {near.pl.coins} coins at {near.pl.short}!</button>}
         <div className="chips cats" role="group" aria-label="Show on map">
           {KINDS.map((k) => (
@@ -67,8 +70,20 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today }:
         </div>
       </div>
 
-      <WorldMap world={world} me={me && me.lat < 36.2 && me.lat > 36 && me.lng > -115.3 && me.lng < -115 ? me : null} avatar={p.avatar} nick={p.nick} collected={got}
-        focus={home} next={next} kinds={kinds} booked={booked} onPick={(x) => { setPoi(undefined); setPick(x); }} onPoi={(x) => { setPick(undefined); setPoi(x); }} />
+      {(() => {
+        const mapProps = { me: me && me.lat < 36.2 && me.lat > 36 && me.lng > -115.3 && me.lng < -115 ? me : null, avatar: p.avatar, nick: p.nick, collected: got, focus: home, next, kinds, booked,
+          onPick: (x: Place) => { setFull(false); setPoi(undefined); setPick(x); }, onPoi: (x: Poi) => { setFull(false); setPick(undefined); setPoi(x); } };
+        return <>
+          {world ? <Suspense fallback={<div className="map3d loading">Loading the 3D world…</div>}><WorldMap3D world={world} {...mapProps} /></Suspense> : <div className="map3d loading">Loading the 3D world…</div>}
+          <button className="btn big" onClick={() => setFull(true)}>🗺️ Open the world map</button>
+          {full && (
+            <div className="fullmap">
+              <div className="sheet-head"><h2>🗺️ World map · Las Vegas Strip</h2><button className="x" aria-label="Close" onClick={() => setFull(false)}>✕</button></div>
+              <WorldMap world={world} {...mapProps} />
+            </div>
+          )}
+        </>;
+      })()}
       <p className="map-key muted">🔒 = booked for an AWS or partner event · 🤝 partner spot · ⭐ AWS zone · tap any building to see what's inside</p>
 
       {pick && (

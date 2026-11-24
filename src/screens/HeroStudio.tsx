@@ -26,7 +26,7 @@ export default function HeroStudio({ p, setAvatar, setNick, addInterest, account
         <p className="nametag">{p.nick}</p>
         <p className="label">JOB: {job.name.toUpperCase()}</p>
         <div className="row">
-          <button className="btn small" onClick={() => setNick(randomNick())}>🎲 New hero name</button>
+          <button className="btn small" onClick={() => setNick(randomNick())}>🎲 New name</button>
           <button className="btn small" onClick={() => {
             const r = { ...a };
             for (const t of LOOK_TABS) r[t.key] = Math.floor(Math.random() * LOOKS[t.key].length);

@@ -20,8 +20,8 @@ function HeroSvg({ a, size, wave }: { a: Avatar; size: number; wave: boolean }) 
   const job = a.job ?? 0;
   const J = LOOKS.job[job] ?? LOOKS.job[0];
   const tw = kind === 2 ? 42 : kind === 3 ? 32 : 36;
-  const torsoH = kind === 1 ? 30 : kind === 3 ? 24 : 28;
-  const leg = kind === 1 ? 22 : kind === 3 ? 12 : 16;
+  const torsoH = kind === 1 ? 46 : kind === 3 ? 38 : 42;
+  const leg = kind === 1 ? 44 : kind === 3 ? 32 : 38;
   const skin = LOOKS.skin[a.skin]?.color ?? '#f1c193';
   const hairC = LOOKS.hairColor[a.hairColor]?.color ?? '#2a2233';
   const shirt = LOOKS.shirt[a.shirt] ?? LOOKS.shirt[0];
@@ -42,10 +42,10 @@ function HeroSvg({ a, size, wave }: { a: Avatar; size: number; wave: boolean }) 
   const iris = IRIS[a.hairColor] ?? IRIS[0];
   const eye = (x: number) => (
     <g stroke="none" key={x}>
-      <ellipse cx={x} cy={hy + 6} rx="5.5" ry="7.5" fill={OUT} />
-      <ellipse cx={x} cy={hy + 9} rx="4" ry="4.2" fill={iris} />
-      <circle cx={x + 1.6} cy={hy + 2.6} r="2.3" fill="#fff" />
-      <circle cx={x - 2} cy={hy + 10.5} r="1.1" fill="#fff" />
+      <ellipse cx={x} cy={hy + 7} rx="3.4" ry="3.8" fill="#fff" />
+      <circle cx={x} cy={hy + 7.4} r="2.5" fill={iris} />
+      <circle cx={x} cy={hy + 7.4} r="1.2" fill={OUT} />
+      <path d={`M${x - 4} ${hy + 1.5} q4 -2 8 0`} stroke={OUT} strokeWidth="1.6" fill="none" />
     </g>
   );
 

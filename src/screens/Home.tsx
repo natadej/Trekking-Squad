@@ -7,6 +7,14 @@ import { KIND, YesNo, mapsLink, placeName, uberLink } from '../ui';
 import { hotelName } from '../trip';
 import { travelMin } from '../planner';
 
+const TIPS = [
+  '💧 Drink a glass of water every hour. The desert air is very dry.',
+  '🪑 Sit for 10 minutes between long walks. Casinos are bigger than they look.',
+  '👟 Comfortable shoes beat smart shoes. Most people walk 8–12 km a day here.',
+  '🌙 Aim for 7 hours of sleep. Late nights add up fast in Vegas.',
+  '🧴 Use sunscreen and lip balm, even in December.',
+];
+
 export interface Question { id: string; icon: string; q: string; yes?: string; no?: string; onYes: () => void; onNo: () => void }
 
 interface Props {
@@ -38,7 +46,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
           <h1>{p.nick}</h1>
           <p className="muted">{daysTo > 0 ? `${daysTo} days until Episode RIV2026 at Vegas!` : 'Episode RIV2026 at Vegas is ON!'}</p>
           <div className="chips">
-            <span className="chip gold">🪙 {p.points} zeny</span>
+            <span className="chip gold">🪙 {p.points.toLocaleString()} points</span>
             <span className="chip">🪙 {p.coins.length} places</span>
           </div>
         </div>
@@ -53,7 +61,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
 
       {next && (
         <div className={`card next ${KIND[next.kind].cls}`}>
-          <p className="label">{daysTo > 0 ? 'First stage' : 'Next stage'}</p>
+          <p className="label">{daysTo > 0 ? 'First on your plan' : 'Next on your plan'}</p>
           <h2>{KIND[next.kind].icon} {next.title}</h2>
           <p>{dayLabel(next.day, true)} · {hm(next.start)}{placeName(next) ? ` · ${placeName(next)}` : ''}</p>
           {leaveBy !== undefined && <p className="tip">🚶 Leave by <b>{hm(leaveBy)}</b> to get there on time.</p>}
@@ -65,6 +73,19 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
         </div>
       )}
 
+      {(() => {
+        const s = p.steps?.[now.day] ?? 0;
+        return (
+          <div className="card">
+            <h2>👣 Today's walk</h2>
+            <p className="steps-line"><b>{s.toLocaleString()}</b> of 10,000 steps · {((s * 0.75) / 1000).toFixed(1)} km</p>
+            <div className="bar" aria-hidden><i style={{ width: `${Math.min(100, s / 100)}%` }} /></div>
+            <p className="small muted">{TIPS[Math.floor(now.min / 60) % TIPS.length]}</p>
+            <button className="btn ghost" onClick={() => go('top')}>🏆 Step leaderboard</button>
+          </div>
+        );
+      })()}
+
       {q && <YesNo key={q.id} icon={q.icon} q={q.q} yes={q.yes} no={q.no} onYes={q.onYes} onNo={q.onNo} />}
 
       <div className="card trip">
@@ -75,11 +96,11 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
           <li>{t.depart ? <>🏠 Fly home <b>{dayLabel(t.depart.depDate)} {hm(t.depart.depTime)}</b> · {t.depart.number}</> : <span className="muted">🏠 No flight home yet</span>}</li>
         </ul>
         <button className="btn primary big" onClick={onImport}>📩 Add a booking email</button>
-        <p className="muted small">Paste or share your flight or hotel email. I read it for you!</p>
+        <p className="muted small">Paste or forward a flight or hotel confirmation. The details are filled in for you.</p>
       </div>
 
       <div className="card">
-        <h2>🏅 Missions</h2>
+        <h2>✅ Getting started</h2>
         <ul className="quests">
           {QUESTS.map((x) => {
             const done = p.quests.includes(x.id);
@@ -87,7 +108,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
               <li key={x.id} className={done ? 'done' : ''}>
                 <span className="q-ico">{done ? '✅' : x.icon}</span>
                 <span className="q-title">{x.title}</span>
-                <span className="chip gold">{done ? 'Done!' : `+${x.points}`}</span>
+                <span className="chip gold">{done ? 'Done' : `+${x.points}`}</span>
               </li>
             );
           })}

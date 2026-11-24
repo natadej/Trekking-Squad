@@ -1,7 +1,7 @@
 /* Ragnarok-style fantasy MMO theme: original art, soft windows with blue title bars, chibi sprites */
 :root {
   --ink: #2c2438;
-  --muted: #6b6280;
+  --muted: #4f4860;
   --bg: #a9d6ff;
   --card: #fffdf6;
   --edge: #8a9cc8;
@@ -14,7 +14,7 @@
   --radius: 10px;
   --px: 'Cinzel', Georgia, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', serif;
   font-family: 'Nunito', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', system-ui, sans-serif;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
   line-height: 1.4;
   color: var(--ink);
@@ -37,7 +37,7 @@ a { color: var(--blue); }
 button { font: inherit; color: inherit; cursor: pointer; }
 input, textarea, select { font: inherit; color: var(--ink); }
 .muted { color: var(--muted); }
-.small { font-size: .85rem; }
+.small { font-size: .92rem; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
 .label { font-family: var(--px); font-weight: 700; font-size: .75rem; letter-spacing: 1px; color: var(--blue); margin: 0 0 4px; }
 
@@ -66,7 +66,7 @@ input, textarea, select { font: inherit; color: var(--ink); }
 .btn:disabled { opacity: .5; }
 
 .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-.chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border: 2px solid var(--edge); border-radius: 999px; background: #fff; font-weight: 800; font-size: .85rem; white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border: 2px solid var(--edge); border-radius: 999px; background: #fff; font-weight: 800; font-size: .92rem; white-space: nowrap; }
 .chip.gold { background: linear-gradient(#fff2b8, var(--gold)); border-color: #b8860b; color: #5a3d00; }
 .chip.on { background: linear-gradient(#8fb8ff, #4a7fd8); border-color: #2f5bb0; color: #fff; }
 .chip.warn { background: #ffe2c6; border-color: #d98b4a; }
@@ -238,3 +238,21 @@ button.link { background: none; border: 0; padding: 8px 2px; text-align: left; w
 .addplan { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; padding-top: 10px; border-top: 2px dashed var(--edge); }
 .addplan select { font: inherit; padding: 8px; border: 2px solid var(--edge); border-radius: 8px; background: #fff; }
 .center { text-align: center; }
+
+/* 3D world map */
+.map3d { position: relative; height: 64vh; min-height: 400px; overflow: hidden; touch-action: none; user-select: none; border: 2px solid var(--edge); border-radius: var(--radius); background: #a9d6ff; box-shadow: 0 8px 18px rgba(44, 36, 56, .18); }
+.map3d.loading { display: grid; place-items: center; font-weight: 800; color: #2b3a66; }
+.map3d canvas { display: block; }
+.map3d .map-zoom { top: auto; bottom: 74px; }
+.map3d .map-zoom button.on { background: var(--gold); }
+.m3-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.m3-layer > * { position: absolute; left: 0; top: 0; pointer-events: auto; will-change: transform; }
+.plate { font: 800 .82rem 'Cinzel', Georgia, serif; color: #ffe27a; background: rgba(28, 22, 40, .72); border: 1px solid #c9a14a; border-radius: 4px; padding: 2px 7px; white-space: nowrap; cursor: pointer; text-shadow: 0 1px 0 #000; }
+.plate.venue { color: #fff; background: rgba(43, 76, 150, .85); border-color: #9cc0ff; }
+.poi3 { font: 700 .75rem Nunito, sans-serif; background: rgba(255, 253, 246, .92); border: 1.5px solid #6f80ad; border-radius: 6px; padding: 1px 5px; white-space: nowrap; cursor: pointer; color: var(--ink); }
+.poi3.partner { background: #fff1b8; } .poi3.aws { background: #ffd9a8; } .poi3.lock { border-color: var(--red); }
+.hero3 { pointer-events: none !important; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .35)); }
+.hero3 b { font: 800 .72rem Nunito, sans-serif; color: #7dffa1; background: rgba(0, 0, 0, .55); padding: 0 5px; border-radius: 3px; }
+.fullmap { position: fixed; inset: 0; z-index: 50; background: var(--card); display: flex; flex-direction: column; }
+.fullmap .sheet-head { margin: 0; }
+.fullmap .wmap { flex: 1; height: auto; border-radius: 0; background: #f1e2bd; }

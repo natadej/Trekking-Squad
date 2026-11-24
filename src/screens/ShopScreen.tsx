@@ -86,7 +86,7 @@ export default function ShopScreen({ p, me, stepsToday, counting, startSteps, co
         <div className="bar" aria-hidden><i style={{ width: `${Math.min(100, stepsToday / 100)}%` }} /></div>
         {!counting
           ? <button className="btn primary big" onClick={startSteps}>👣 Start counting my steps</button>
-          : <p className="small muted">🟢 Counting steps while the app is open. +1 zeny every 100 steps, +200 at 10,000!</p>}
+          : <p className="small muted">🟢 Counting steps while the app is open. +1 point every 100 steps, +200 at 10,000.</p>}
         <p className="small muted">Walk to shops, outlets and shows to climb the leaderboard. Tap a pin to see what's there.</p>
       </div>
 
@@ -135,7 +135,7 @@ export default function ShopScreen({ p, me, stepsToday, counting, startSteps, co
             <li key={a.id}><button onClick={() => setOpenA(a)}>
               <span className="ri">{a.icon}</span>
               <span><b>{a.name}</b><br /><span className="small muted">{a.far ? 'Day trip · 4.5 h drive' : `👣 ${steps(stepsTo(from, a))} · ${data!.shops.filter((s) => s.a === a.id).length || ''}${a.kind === 'mall' ? ' shops' : ''}`}</span></span>
-              {got.has('spot:' + a.id) ? <span className="chip gold">✓</span> : <span className="chip">+50 z</span>}
+              {got.has('spot:' + a.id) ? <span className="chip gold">✓</span> : <span className="chip">+50 pts</span>}
             </button></li>
           ))}
         </ul>
@@ -167,7 +167,7 @@ export default function ShopScreen({ p, me, stepsToday, counting, startSteps, co
             {openA.shows?.map((s) => <p key={s.n} className="tip">🎭 <b>{s.n}</b> · {s.when} <a href={s.url} target="_blank" rel="noreferrer">Tickets</a></p>)}
             {openA.deals && <a className="btn yes big" href={openA.deals} target="_blank" rel="noreferrer">🎟️ See today's deals</a>}
             {openA.id === 'venetian' && <p className="small muted">🎟️ Shops marked "deal" are in the mall's RewardCard or dining programs.</p>}
-            {near(openA) && !got.has('spot:' + openA.id) && <button className="btn yes big pop" onClick={() => collectSpot(openA)}>🪙 You're here! Collect +50 zeny</button>}
+            {near(openA) && !got.has('spot:' + openA.id) && <button className="btn yes big pop" onClick={() => collectSpot(openA)}>🪙 You're here! Collect +50 points</button>}
             <div className="row-btns">
               <a className="btn" href={go(openA, !!openA.far || stepsTo(from, openA) > 4000)} target="_blank" rel="noreferrer">🧭 Directions</a>
               <a className="btn ghost" href={openA.url} target="_blank" rel="noreferrer">🌐 Website</a>

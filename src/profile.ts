@@ -52,12 +52,12 @@ export function saveProfile(p: Profile) {
 }
 
 export const QUESTS: { id: string; icon: string; title: string; points: number }[] = [
-  { id: 'hero', icon: '⚔️', title: 'Create your hero', points: 50 },
+  { id: 'hero', icon: '⚔️', title: 'Set up your character', points: 50 },
   { id: 'flight', icon: '✈️', title: 'Add your flight', points: 100 },
   { id: 'hotel', icon: '🏨', title: 'Add your hotel', points: 100 },
-  { id: 'interests', icon: '⭐', title: 'Pick what you love', points: 50 },
+  { id: 'interests', icon: '⭐', title: 'Choose your interests', points: 50 },
   { id: 'plan', icon: '🗓️', title: 'Check your plan', points: 50 },
   { id: 'calendar', icon: '📅', title: 'Put the plan in your calendar', points: 100 },
-  { id: 'signin', icon: '🔑', title: 'Save your hero with Google', points: 50 },
+  { id: 'signin', icon: '🔑', title: 'Back up with Google', points: 50 },
 ];
 export const questPoints = (id: string) => QUESTS.find((q) => q.id === id)?.points ?? 0;

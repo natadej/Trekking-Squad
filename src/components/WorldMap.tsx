@@ -199,7 +199,7 @@ const mp = (lat: number, lng: number) => ({ x: ((lng - BOUNDS.west) / (BOUNDS.ea
 const mroad = STRIP_ROAD.map(([a, b]) => mp(a, b)).map((p) => `${p.x},${p.y}`).join(' ');
 const PERM = MW / ((BOUNDS.east - BOUNDS.west) * 111320 * MK); // mini-map px per metre
 
-function MiniMap({ center, me, hdg, next, view, onJump }: { center: LL; me?: LL | null; hdg?: number; next?: Place; view: { w: number; h: number }; onJump: (c: LL) => void }) {
+export function MiniMap({ center, me, hdg, next, view, onJump }: { center: LL; me?: LL | null; hdg?: number; next?: Place; view: { w: number; h: number }; onJump: (c: LL) => void }) {
   const c = mp(center.lat, center.lng), m = me ? mp(me.lat, me.lng) : null, n = next ? mp(next.lat, next.lng) : null;
   const jump = (e: React.MouseEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();

@@ -20,7 +20,7 @@ import { STEP_M, type Area } from './data/shops';
 
 const TABS = [
   ['home', '🏠', 'Home'], ['plan', '🗓️', 'Plan'], ['map', '🗺️', 'Map'],
-  ['classes', '🎓', 'Classes'], ['hero', '⚔️', 'Hero'], ['top', '🏆', 'Top'],
+  ['classes', '🎓', 'Classes'], ['hero', '👤', 'Profile'], ['top', '🏆', 'Top'],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -118,7 +118,7 @@ export default function App() {
     const k = 'walk10k:' + nowPT().day;
     if (stepsToday >= 10000 && !p.quests.includes(k)) {
       update((x) => (x.quests.includes(k) ? x : { ...x, quests: [...x.quests, k], points: x.points + 200 }));
-      say('👣 10,000 steps today! +200 zeny', true);
+      say('👣 10,000 steps today! +200 points', true);
     }
   }, [stepsToday, p.quests, update, say]);
 
@@ -199,14 +199,14 @@ export default function App() {
 
   const account = (
     <div className="card">
-      <h2>🔑 Save my hero</h2>
-      {!cloud() ? <p className="muted">Online save is coming soon. Your hero is saved on this device.</p>
+      <h2>🔑 Back up my profile</h2>
+      {!cloud() ? <p className="muted">Online save is coming soon. Your profile is saved on this device.</p>
         : user && !user.isAnonymous ? <>
-          <p>✅ Saved to <b>{user.email}</b>. Sign in on any phone or computer to keep playing.</p>
+          <p>✅ Saved to <b>{user.email}</b>. Sign in on any phone or computer to continue.</p>
           <button className="btn small ghost" onClick={() => signOutCloud()}>Sign out</button>
         </> : <>
-          <p className="muted">Sign in with Google to keep your hero on every device.</p>
-          <button className="btn primary big" onClick={() => signInGoogle().then(() => say('🔑 Hero saved!', true)).catch(() => say('Sign-in did not finish. Try again!'))}>Sign in with Google</button>
+          <p className="muted">Sign in with Google to use your profile on every device.</p>
+          <button className="btn primary big" onClick={() => signInGoogle().then(() => say('🔑 Profile backed up.', true)).catch(() => say('Sign-in did not finish. Please try again.'))}>Sign in with Google</button>
         </>}
     </div>
   );
@@ -216,7 +216,7 @@ export default function App() {
       <header className="topbar">
         <div className="logo"><span>TREKKING <b>SQUAD</b></span><small>EPISODE: RIV2026 AT VEGAS</small></div>
         <span className="chip steps" title="Steps today">👣 {stepsToday.toLocaleString()}</span>
-        <span className="chip gold zeny">🪙 {p.points.toLocaleString()} z</span>
+        <span className="chip gold zeny">🪙 {p.points.toLocaleString()} pts</span>
       </header>
       {tab === 'home' && <Home p={p} plan={plan} questions={questions} onImport={() => setImporting(true)} go={(t) => setTab(t as Tab)} checkIn={checkIn} />}
       {tab === 'plan' && <Plan p={p} plan={plan}
@@ -236,10 +236,10 @@ export default function App() {
         setPrefs={(f: (x: Prefs) => Prefs) => update((x) => ({ ...x, prefs: f(x.prefs) }))}
         toggle={(c) => update((x) => (x.added.includes(c) ? { ...x, added: x.added.filter((y) => y !== c) } : { ...x, added: [...x.added, c], removed: x.removed.filter((y) => y !== c) }))} />}
       {tab === 'hero' && <HeroStudio p={p} setAvatar={(a: Avatar) => update((x) => ({ ...x, avatar: a }))} setNick={(n) => update((x) => ({ ...x, nick: n }))}
-        addInterest={(id) => { update((x) => ({ ...x, prefs: { ...x.prefs, interests: x.prefs.interests.includes(id) ? x.prefs.interests : [...x.prefs.interests, id] } })); say('⭐ Added! Your classes now match your job.', true); }} account={account} />}
+        addInterest={(id) => { update((x) => ({ ...x, prefs: { ...x.prefs, interests: x.prefs.interests.includes(id) ? x.prefs.interests : [...x.prefs.interests, id] } })); say('⭐ Added. Class suggestions now include this topic.', true); }} account={account} />}
       {tab === 'top' && <Leaders p={p} rows={leaders} uid={user?.uid} live={!!user && leaders.length > 0} counting={counting} startSteps={startSteps} />}
 
-      {importing && <ImportSheet initial={shared} onClose={() => setImporting(false)} onDone={(t) => { setTrip(t); setImporting(false); say('🎉 Trip saved! I updated your plan.', true); }} />}
+      {importing && <ImportSheet initial={shared} onClose={() => setImporting(false)} onDone={(t) => { setTrip(t); setImporting(false); say('✅ Trip saved. Your plan is updated.', true); }} />}
       {toast && <div className="toast" role="status">{toast}</div>}
       {party > 0 && <div className="confetti" key={party} aria-hidden>{Array.from({ length: 28 }, (_, i) => <i key={i} style={{ left: `${(i * 37) % 100}%`, background: ['#facc15', '#f472b6', '#60a5fa', '#34d399', '#a78bfa'][i % 5], animationDelay: `${(i % 7) * 0.08}s` }} />)}</div>}
 

@@ -19,7 +19,7 @@ export default function Leaders({ p, rows, uid, live, counting, startSteps }: Pr
       <div className="card">
         <h1>🏆 Step leaderboard</h1>
         <p className="muted">{live ? '🟢 Live! Steps update by themselves.' : '⚪ Save your hero online to join the world board.'}</p>
-        <p className="small muted">Walk around Vegas to climb. Visiting shops and places gives bonus zeny. Only hero names are shown.</p>
+        <p className="small muted">Walk around Vegas to climb. Visiting shops and places gives bonus points. Only display names are shown.</p>
         {!counting && <button className="btn primary big" onClick={startSteps}>👣 Start counting my steps</button>}
       </div>
       <div className="seg" role="group" aria-label="Time">
@@ -33,7 +33,7 @@ export default function Leaders({ p, rows, uid, live, counting, startSteps }: Pr
             <li key={r.uid} className={me ? 'me' : ''}>
               <span className="rank">{medal[i] || i + 1}</span>
               <span className="mini"><Hero a={r.avatar} size={90} /></span>
-              <span><b>{r.nick}</b>{me && <span className="chip gold" style={{ marginLeft: 6 }}>YOU</span>}<br /><span className="small muted">{((s * 0.75) / 1000).toFixed(1)} km · 🪙 {r.points} z</span></span>
+              <span><b>{r.nick}</b>{me && <span className="chip gold" style={{ marginLeft: 6 }}>YOU</span>}<br /><span className="small muted">{((s * 0.75) / 1000).toFixed(1)} km · 🪙 {r.points} pts</span></span>
               <b>👣 {s.toLocaleString()}</b>
             </li>
           );
