@@ -310,6 +310,11 @@ export default function WorldMap3D(props: Props) {
       renderer.render(scene, camera);
       place(heroEl.current, hero);
       const taken: R[] = [];
+      if (heroEl.current && heroEl.current.style.display !== 'none') {
+        tmp.copy(hero).project(camera);
+        const sx = ((tmp.x + 1) / 2) * w, sy = ((1 - tmp.y) / 2) * h, hw = heroEl.current.offsetWidth / 2;
+        taken.push({ l: sx - hw, r: sx + hw, t: sy - heroEl.current.offsetHeight, b: sy });
+      }
       PLACES.forEach((pl) => place(labelEls.current[pl.id], anchors[pl.id], C.dist < 900 ? 2600 : 1e9, taken));
       for (const node of Object.values(poiEls.current)) if (node) place(node, new THREE.Vector3(Number(node.dataset.x), PODIUM + 6, Number(node.dataset.z)), 1e9, taken);
       if (t - lastPoi > 400) {
