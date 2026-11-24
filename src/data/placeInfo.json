@@ -1,0 +1,197 @@
+{
+ "airport": {
+  "title": "Harry Reid International Airport",
+  "about": "Harry Reid International Airport, formerly McCarran International Airport until 2021, is an international airport serving Las Vegas as well as the surrounding Las Vegas Valley in Nevada, United States. It is located approximately five miles south of downtown Las Vegas, in the unincorporated area of Paradise, and covers 2,800 acres of land.",
+  "src": "https://en.wikipedia.org/wiki/Harry_Reid_International_Airport",
+  "img": "img/places/airport.jpg",
+  "credit": "Craig Butz",
+  "license": "CC BY-SA 3.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Las_Vegas_McCarran.jpg"
+ },
+ "mandalay": {
+  "title": "Mandalay Bay",
+  "about": "Mandalay Bay is a 43-story luxury resort and casino at the south end of the Las Vegas Strip in Paradise, Nevada. It is owned by Vici Properties and operated by MGM Resorts International. It was developed by Circus Circus Enterprises and completed at a cost of $950 million. It opened on March 2, 1999, on the former site of the Hacienda hotel-casino. MGM acquired Mandalay Bay in 2005, and the Blackstone Group became a co-owner in 2020. Vici acquired MGM's ownership stake in 2022.",
+  "src": "https://en.wikipedia.org/wiki/Mandalay_Bay",
+  "img": "img/places/mandalay.jpg",
+  "credit": "Loganfrick",
+  "license": "CC BY-SA 4.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Mandalay_Bay_May_22_2023.jpg"
+ },
+ "luxor": {
+  "title": "Luxor Las Vegas",
+  "about": "Luxor Las Vegas is a casino hotel on the southern end of the Las Vegas Strip in Paradise, Nevada. Luxor features an ancient Egyptian theme, and includes a casino and over 4,000 hotel rooms. The resort's pyramid is 30 stories and contains the world's largest atrium by volume. The tip of the pyramid features a light beam, which shines into the night sky and is the most powerful human-made light in the world.",
+  "src": "https://en.wikipedia.org/wiki/Luxor_Las_Vegas",
+  "img": "img/places/luxor.jpg",
+  "credit": "Rob Young from United Kingdom",
+  "license": "CC BY 2.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Luxor_(870133356).jpg"
+ },
+ "nyny": {
+  "title": "New York-New York Hotel and Casino",
+  "about": "New York-New York Hotel and Casino is a casino hotel on the Las Vegas Strip in Paradise, Nevada, United States. It is owned by Vici Properties and operated by MGM Resorts International, and is designed to evoke New York City in its architecture and other aspects. The design features downsized replicas of numerous city landmarks such as the Statue of Liberty. The hotel tower represents various skyscrapers. Its tallest structure is a replica of the Empire State Building, standing at 47 stories and 529 feet (161 m). This made New York-New York the tallest building in Nevada until the completion of Wynn Las Vegas in 2005. The property includes the Big Apple Coaster, which travels around the hotel tower. The casino is 51,765 sq ft (4,809.1 m2), and the hotel contains 2,024 rooms.",
+  "src": "https://en.wikipedia.org/wiki/New_York-New_York_Hotel_and_Casino",
+  "img": "img/places/nyny.jpg",
+  "credit": "Max Richard",
+  "license": "CC0",
+  "file": "https://commons.wikimedia.org/wiki/File:2019.10.11_Las_Vegas_-_48955419271.jpg"
+ },
+ "mgm": {
+  "title": "MGM Grand Las Vegas",
+  "about": "The MGM Grand Las Vegas, often called The Grand Hotel or The MGM is a hotel and casino located on the Las Vegas Strip in Nevada. It is owned by Vici Properties and operated by MGM Resorts International. The resort was developed by Kirk Kerkorian through his company, MGM Grand, Inc. Kerkorian had previously developed another MGM Grand, which opened on the Strip in 1973, was renamed Bally's in 1986, and was again renamed Horseshoe in 2022.",
+  "src": "https://en.wikipedia.org/wiki/MGM_Grand_Las_Vegas",
+  "img": "img/places/mgm.jpg",
+  "credit": "No machine-readable author provided. Nadavspi~commonswiki assumed (based on copy",
+  "license": "CC BY-SA 1.0",
+  "file": "https://commons.wikimedia.org/wiki/File:LasVegas-MGMgrand.jpg"
+ },
+ "aria": {
+  "title": "Aria Resort and Casino",
+  "about": "Aria Resort and Casino is a luxury resort and casino, and the primary property at the CityCenter complex, located on the Las Vegas Strip in Paradise, Nevada. It is owned by The Blackstone Group and operated by MGM Resorts International.",
+  "src": "https://en.wikipedia.org/wiki/Aria_Resort_and_Casino",
+  "img": "img/places/aria.jpg",
+  "credit": "King of Hearts",
+  "license": "CC BY-SA 3.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Aria_Las_Vegas_December_2013.jpg"
+ },
+ "cosmo": {
+  "title": "Cosmopolitan of Las Vegas",
+  "about": "The Cosmopolitan of Las Vegas is a resort casino and hotel on the Las Vegas Strip in Paradise, Nevada. It is owned by the Blackstone Group, Stonepeak Partners, and the Cherng Family Trust, and operated by MGM Resorts International. The resort includes a 100,000 sq ft (9,300 m2) casino and 3,033 rooms across two towers, as well as a 3,200-seat performance theater and various restaurants.",
+  "src": "https://en.wikipedia.org/wiki/Cosmopolitan_of_Las_Vegas"
+ },
+ "bellagio": {
+  "title": "Bellagio (resort)",
+  "about": "Bellagio is a resort, luxury hotel, and casino on the Las Vegas Strip in Paradise, Nevada. It is owned by Blackstone Inc. and operated by MGM Resorts International. Bellagio was conceived by casino owner Steve Wynn, and was built on the former site of the Dunes hotel-casino. Wynn's company, Mirage Resorts, purchased the Dunes in 1992. Plans were announced in 1994 to replace it with Beau Rivage, a French-themed resort. In 1995, Wynn changed the project plans to instead theme it after the village of Bellagio, on Lake Como. The resort was designed by Jon Jerde. Construction began on November 1, 1995, with Marnell Corrao Associates as general contractor.",
+  "src": "https://en.wikipedia.org/wiki/Bellagio_(resort)",
+  "img": "img/places/bellagio.jpg",
+  "credit": "GyozaDumpling",
+  "license": "CC BY-SA 4.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Night_mode_2_Bellagio.jpg"
+ },
+ "paris": {
+  "title": "Paris Las Vegas",
+  "about": "Paris Las Vegas is a casino hotel on the Las Vegas Strip in Paradise, Nevada, United States. It is owned and operated by Caesars Entertainment. Property features include a 95,263-square-foot (8,850.2 m2) casino, 3,672 hotel rooms, a 1,400-seat performance theater, and various restaurants. The Paris-themed resort also includes a half-scale replica of the Eiffel Tower, rising 540 feet (164.6 m). Replicas of other Paris landmarks are featured as well, including the Arc de Triomphe, the Louvre, the Paris Opera House, and the Musée d'Orsay.",
+  "src": "https://en.wikipedia.org/wiki/Paris_Las_Vegas",
+  "img": "img/places/paris.jpg",
+  "credit": "Jürgen Matern",
+  "license": "CC BY-SA 3.0",
+  "file": "https://commons.wikimedia.org/wiki/File:The_hotel_Paris_Las_Vegas_as_seen_from_the_hotel_The_Bellagio.jpg"
+ },
+ "caesars": {
+  "title": "Caesars Palace",
+  "about": "Caesars Palace is a luxury casino hotel in Paradise, Nevada, United States. The hotel is situated on the west side of the Las Vegas Strip between Bellagio and the under-construction Hard Rock Las Vegas. It is one of Las Vegas's largest and best known landmarks.",
+  "src": "https://en.wikipedia.org/wiki/Caesars_Palace",
+  "img": "img/places/caesars.jpg",
+  "credit": "Cygnusloop99",
+  "license": "CC BY-SA 3.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Caesars_Palace_-_South_East_-_2010-12-12.jpg"
+ },
+ "forum": {
+  "title": "Caesars Forum",
+  "about": "Caesars Forum is a convention center located in Paradise, Nevada, east of the Las Vegas Strip. It is owned and operated by Caesars Entertainment. Development of the project began around early 2017, and construction started in July 2018. The facility opened on October 25, 2020. It has 550,000 sq ft (51,000 m2) of space, and includes the largest pillarless ballrooms in the world. It also features a 100,000 sq ft (9,300 m2) plaza.",
+  "src": "https://en.wikipedia.org/wiki/Caesars_Forum"
+ },
+ "venetian": {
+  "title": "The Venetian Las Vegas",
+  "about": "The Venetian Las Vegas is a luxury hotel and casino resort located on the Las Vegas Strip in Paradise, Nevada, United States. It is owned by Vici Properties and operated by Apollo Global Management. It was developed by businessman Sheldon Adelson through his company, Las Vegas Sands. The Venetian was built on the former site of the Sands Hotel and Casino, which was closed and demolished in 1996.",
+  "src": "https://en.wikipedia.org/wiki/The_Venetian_Las_Vegas",
+  "img": "img/places/venetian.jpg",
+  "credit": "Marek Ślusarczyk (Tupungato) Photo portfolio",
+  "license": "CC BY 3.0",
+  "file": "https://commons.wikimedia.org/wiki/File:11_The_Venetian_Las_Vegas_-_luxury_hotel_and_casino_in_Las_Vegas_Strip.jpg"
+ },
+ "palazzo": {
+  "title": "The Palazzo",
+  "about": "The Palazzo is a luxury hotel and casino resort located on the Las Vegas Strip in Paradise, Nevada. The Palazzo is part of a larger complex comprising the adjoining Venetian resort and Venetian Expo, all of which are owned by Vici Properties and operated by Apollo Global Management. The complex ranks as the third-largest hotel in the world.",
+  "src": "https://en.wikipedia.org/wiki/The_Palazzo",
+  "img": "img/places/palazzo.jpg",
+  "credit": "Alex Proimos from Sydney, Australia",
+  "license": "CC BY 2.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Palazzo_Casino,_Las_Vegas_(3479650636).jpg"
+ },
+ "wynn": {
+  "title": "Wynn Las Vegas",
+  "about": "Wynn Las Vegas, often simply referred to as Wynn, is a luxury resort and casino located on the Las Vegas Strip in Paradise, Nevada, United States. It is owned and operated by Wynn Resorts, and was built on the former site of the Desert Inn resort, which opened in 1950. Casino developer Steve Wynn purchased and closed the Desert Inn during 2000, with plans to build a new resort on the site. The design phase lasted two and a half years, and construction began on October 31, 2002, with Marnell Corrao Associates as general contractor. At a cost of $2.7 billion, Wynn Las Vegas was the most expensive resort ever built, beating Wynn's $1.6 billion Bellagio, which opened on the Strip in 1998.",
+  "src": "https://en.wikipedia.org/wiki/Wynn_Las_Vegas",
+  "img": "img/places/wynn.jpg",
+  "credit": "Almc1217",
+  "license": "CC BY 3.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Wynn_2_(2).jpg"
+ },
+ "encore": {
+  "title": "Encore Las Vegas",
+  "about": "Encore Las Vegas is a luxury resort, casino and hotel located on the Las Vegas Strip in Paradise, Nevada. The resort is connected to its sister resort, Wynn Las Vegas, located directly south. Both are owned by Wynn Resorts and located on the former site of the Desert Inn resort, which Steve Wynn purchased and closed in 2000. Encore took the place of two Desert Inn hotel structures, the Palms and St. Andrews towers, both demolished in 2004. Construction of Encore began on April 28, 2006, the first anniversary of Wynn Las Vegas' opening. The Encore project, built by Tutor Saliba, cost $2.3 billion. It opened on December 22, 2008.",
+  "src": "https://en.wikipedia.org/wiki/Encore_Las_Vegas",
+  "img": "img/places/encore.jpg",
+  "credit": "Oliver Pitzke",
+  "license": "CC BY-SA 3.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Encore_Hotel_-_panoramio.jpg"
+ },
+ "resortsworld": {
+  "title": "Resorts World Las Vegas",
+  "about": "Resorts World Las Vegas is a luxury resort and casino on the Las Vegas Strip in Winchester, Nevada, United States. It is owned and operated by Genting Group as part of the Resorts World brand.",
+  "src": "https://en.wikipedia.org/wiki/Resorts_World_Las_Vegas",
+  "img": "img/places/resortsworld.jpg",
+  "credit": "Logan Frick",
+  "license": "CC BY-SA 4.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Resorts_World_Las_Vegas_May_2022.jpg"
+ },
+ "fontainebleau": {
+  "title": "Fontainebleau Las Vegas",
+  "about": "The Fontainebleau Las Vegas is a luxury resort and casino on the Las Vegas Strip in Winchester, Nevada. It is owned and operated by Fontainebleau Development; is a sister property to Fontainebleau Miami Beach; and sits on the 24.5-acre (9.9 ha) site previously occupied by the El Rancho Hotel and Casino and the Algiers Hotel. Originally proposed by developer Fontainebleau Resorts, owned by Jeff Soffer, the property's owner and developer has changed several times since the project was announced in May 2005.",
+  "src": "https://en.wikipedia.org/wiki/Fontainebleau_Las_Vegas"
+ },
+ "allegiant": {
+  "title": "Allegiant Stadium",
+  "about": "Allegiant Stadium is a multi-purpose indoor stadium in the western United States, located in Paradise, Nevada, southwest of adjacent Las Vegas. Opened six years ago in 2020, it is the home field of the Las Vegas Raiders of the National Football League (NFL) and the University of Nevada, Las Vegas (UNLV) Rebels. The stadium also hosts the Vegas Kickoff Classic in early September and the Las Vegas Bowl in December. It hosted SummerSlam in 2021, which was the first live event with fans in attendance to be held at the stadium since its opening the year prior, Super Bowl LVIII in 2024, WrestleMania 41 in 2025, WrestleMania 42 in 2026, and will host the College Football Playoff National Championship in January 2027. It is scheduled to host Super Bowl LXIII in February 2029.",
+  "src": "https://en.wikipedia.org/wiki/Allegiant_Stadium",
+  "img": "img/places/allegiant.jpg",
+  "credit": "U.S. Customs and Border Protection",
+  "license": "Public domain",
+  "file": "https://commons.wikimedia.org/wiki/File:Allegiant_Stadium_Street_View_on_Super_Bowl_LVIII.jpg"
+ },
+ "sphere": {
+  "title": "Sphere (venue)",
+  "about": "Sphere is a music and entertainment arena in Paradise, Nevada, United States, east of the Las Vegas Strip. Designed by Populous, the project was announced by the Madison Square Garden Company in 2018, known then as the MSG Sphere. The venue, which seats 17,600 people and has total capacity of 20,000, is being marketed for its immersive video and audio capabilities, which include a 16K resolution wraparound interior LED screen, speakers with beamforming and wave field synthesis technologies, and 4D physical effects. The venue's exterior also features 580,000 sq ft (54,000 m2) of LED displays, making it the largest in the world. Sphere measures 366 feet (112 m) high and 516 feet (157 m) wide; it would be the largest spherical building on Earth, if it were not a geodesic dome. The arena cost $2.3 billion, making it the most expensive entertainment venue built in the Las Vegas Valley.",
+  "src": "https://en.wikipedia.org/wiki/Sphere_(venue)",
+  "img": "img/places/sphere.jpg",
+  "credit": "Y2kcrazyjoker4",
+  "license": "CC BY 4.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Sphere-exosphere-on-Jan-26-2024.jpg"
+ },
+ "fountains": {
+  "title": "Fountains of Bellagio",
+  "about": "Fountains of Bellagio is a free attraction at the Bellagio resort, located on the Las Vegas Strip in Paradise, Nevada. It consists of a musical fountain show performed in an 8.5-acre (3.4 ha) man-made lake in front of the resort. The show uses 1,214 water nozzles and 4,792 lights. The fountains shoot as high as 460 feet (140 m). Stages are sometimes built on the lake to host events, such as musical performances, that incorporate the fountain show.",
+  "src": "https://en.wikipedia.org/wiki/Fountains_of_Bellagio",
+  "img": "img/places/fountains.jpg",
+  "credit": "Kashyap Hosdurga",
+  "license": "CC BY 2.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Bellagio_Fountain.jpg"
+ },
+ "highroller": {
+  "title": "High Roller (Ferris wheel)",
+  "about": "High Roller is a 550-foot-tall (167.6 m), 520-foot (158.5 m) diameter giant Ferris wheel on the Las Vegas Strip in Paradise, Nevada, United States. Owned and operated by Caesars Entertainment, it opened to the public on March 31, 2014 as the world's tallest Ferris wheel. It is 9 ft (2.7 m) taller than the 541-foot (165 m) Singapore Flyer, which had held the record since 2008. Since October 2021 it is the world's second tallest Ferris wheel after Ain Dubai.",
+  "src": "https://en.wikipedia.org/wiki/High_Roller_(Ferris_wheel)",
+  "img": "img/places/highroller.jpg",
+  "credit": "Roman Eugeniusz",
+  "license": "CC BY-SA 3.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Downtown,_Las_Vegas,_NV,_USA_-_panoramio_(6).jpg"
+ },
+ "sign": {
+  "title": "Welcome to Fabulous Las Vegas sign",
+  "about": "The Welcome to Fabulous Las Vegas sign is a Las Vegas landmark funded in May 1959 and erected soon after by Western Neon. The sign was designed by Betty Willis at the request of Ted Rogich, a local salesman, who sold it to the government of Clark County in Nevada.",
+  "src": "https://en.wikipedia.org/wiki/Welcome_to_Fabulous_Las_Vegas_sign",
+  "img": "img/places/sign.jpg",
+  "credit": "Thomas Wolf, www.foto-tw.de",
+  "license": "CC BY-SA 3.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Welcome_to_Fabulous_Las_Vegas.jpg"
+ },
+ "strat": {
+  "title": "The Strat",
+  "about": "The Strat is a hotel and casino in Las Vegas, Nevada, United States. It includes a 1,149-foot-tall (350 m) observation tower, the tallest in the United States. It is also the second-tallest observation tower in the Western Hemisphere, surpassed only by the CN Tower in Toronto, Ontario. The top of the tower includes a revolving restaurant, lounges, observation decks, and several thrill rides. The hotel and casino are at the base of the tower, and the resort also includes a showroom and a shopping mall. The Strat is within city limits on Las Vegas Boulevard, just north of the Las Vegas Strip. The resort is sometimes considered a Strip property, but Clark County does not officially recognize it as such, saying the Strip does not extend into the city.",
+  "src": "https://en.wikipedia.org/wiki/The_Strat",
+  "img": "img/places/strat.jpg",
+  "credit": "Mariordo (Mario Roberto Durán Ortiz)",
+  "license": "CC BY-SA 4.0",
+  "file": "https://commons.wikimedia.org/wiki/File:Aerial_view_Casino_Stratosphere_LAS_09_2017_4912.jpg"
+ }
+}
