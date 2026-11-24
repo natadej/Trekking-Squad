@@ -3,7 +3,7 @@ import type { Avatar, PlanItem, Prefs, Profile, Session, Trip } from './types';
 import { loadProfile, questPoints, saveProfile } from './profile';
 import { buildPlan } from './planner';
 import { toIcs } from './ics';
-import { cloud, loadRemote, saveRemote, syncCode, loadSyncCode, watchLeaders, watchUser, type CloudUser, type Leader } from './cloud';
+import { cloud, loadRemote, saveRemote, stepStats, syncCode, loadSyncCode, watchLeaders, watchUser, type CloudUser, type Leader } from './cloud';
 import { COLLECT_RADIUS_M, distanceM, placeById, type Place } from './data/places';
 import { nowPT } from './time';
 import Home, { type Question } from './screens/Home';
@@ -76,12 +76,26 @@ export default function App() {
 
   // cloud: sign-in, profile sync, live leaderboard
   useEffect(() => watchUser(setUser), []);
-  useEffect(() => (user ? watchLeaders(setLeaders) : undefined), [user]);
+  // the same profile can be open on two devices: merge the newer save, keeping the most steps per day
+  const pullRemote = useCallback((r: Profile) => setP((cur) => {
+    const base = r.updatedAt > cur.updatedAt ? r : cur, steps = { ...(r.steps ?? {}) };
+    for (const [d, n] of Object.entries(cur.steps ?? {})) steps[d] = Math.max(steps[d] ?? 0, n);
+    const m = { ...base, steps, wish: base.wish ?? [] };
+    saveProfile(m);
+    return m;
+  }), []);
+  const pRef = useRef(p);
+  pRef.current = p;
+  useEffect(() => (user ? watchLeaders((rows) => {
+    setLeaders(rows);
+    const mine = rows.find((r) => r.uid === user.uid);
+    if (mine && synced.current && (mine.stepsTotal ?? 0) > stepStats(pRef.current).stepsTotal) loadRemote(user).then((r) => r && pullRemote(r)).catch(() => {});
+  }) : undefined), [user, pullRemote]);
   useEffect(() => {
     if (!user) return;
     synced.current = false;
     loadRemote(user).then((r) => {
-      if (r && r.updatedAt > p.updatedAt) { const m = { ...r, steps: r.steps ?? {}, wish: r.wish ?? [] }; setP(m); saveProfile(m); }
+      if (r) pullRemote(r);
       synced.current = true;
     }).catch(() => { synced.current = true; });
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps

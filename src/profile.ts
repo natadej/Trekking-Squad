@@ -58,6 +58,6 @@ export const QUESTS: { id: string; icon: string; title: string; points: number }
   { id: 'interests', icon: '⭐', title: 'Choose your interests', points: 50 },
   { id: 'plan', icon: '🗓️', title: 'Check your plan', points: 50 },
   { id: 'calendar', icon: '📅', title: 'Put the plan in your calendar', points: 100 },
-  { id: 'signin', icon: '🔑', title: 'Back up with Google', points: 50 },
+  { id: 'signin', icon: '🔑', title: 'Use my profile on a 2nd device', points: 50 },
 ];
 export const questPoints = (id: string) => QUESTS.find((q) => q.id === id)?.points ?? 0;
