@@ -270,11 +270,18 @@ export default function WorldMap3D(props: Props) {
 
     const anchors = Object.fromEntries(PLACES.map((pl) => [pl.id, v3(pl, topOf(pl.id) + 16)]));
     const tmp = new THREE.Vector3(), mx = new THREE.Matrix4();
-    const place = (node: HTMLElement | null | undefined, v: THREE.Vector3, maxD = 1e9) => {
+    type R = { l: number; t: number; r: number; b: number };
+    const place = (node: HTMLElement | null | undefined, v: THREE.Vector3, maxD = 1e9, taken?: R[]) => {
       if (!node) return;
       tmp.copy(v).project(camera);
       const d = camera.position.distanceTo(v);
       if (tmp.z > 1 || d > maxD || Math.abs(tmp.x) > 1.2 || Math.abs(tmp.y) > 1.2) { node.style.display = 'none'; return; }
+      const sx = ((tmp.x + 1) / 2) * w, sy = ((1 - tmp.y) / 2) * h;
+      if (taken) {
+        const bw = node.offsetWidth || 80, bh = node.offsetHeight || 20, rc = { l: sx - bw / 2 - 2, r: sx + bw / 2 + 2, t: sy - bh - 2, b: sy + 2 };
+        if (taken.some((o) => rc.l < o.r && rc.r > o.l && rc.t < o.b && rc.b > o.t)) { node.style.display = 'none'; return; }
+        taken.push(rc);
+      }
       node.style.display = '';
       node.style.transform = `translate(${((tmp.x + 1) / 2) * w}px, ${((1 - tmp.y) / 2) * h}px) translate(-50%, -100%)`;
     };
@@ -301,9 +308,10 @@ export default function WorldMap3D(props: Props) {
       if (S.sphereMat) S.sphereMat.emissive.setHSL((t / 20000) % 1, 0.8, 0.45);
       S.wheel.rotation.z = t / 40000;
       renderer.render(scene, camera);
-      PLACES.forEach((pl) => place(labelEls.current[pl.id], anchors[pl.id], C.dist < 900 ? 2600 : 1e9));
       place(heroEl.current, hero);
-      for (const node of Object.values(poiEls.current)) if (node) place(node, new THREE.Vector3(Number(node.dataset.x), PODIUM + 6, Number(node.dataset.z)));
+      const taken: R[] = [];
+      PLACES.forEach((pl) => place(labelEls.current[pl.id], anchors[pl.id], C.dist < 900 ? 2600 : 1e9, taken));
+      for (const node of Object.values(poiEls.current)) if (node) place(node, new THREE.Vector3(Number(node.dataset.x), PODIUM + 6, Number(node.dataset.z)), 1e9, taken);
       if (t - lastPoi > 400) {
         lastPoi = t;
         const c = fromM(O, C.target.x, C.target.z);
