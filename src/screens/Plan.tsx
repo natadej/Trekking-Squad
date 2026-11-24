@@ -38,7 +38,7 @@ export default function Plan({ p, plan, onRemove, onAdd, onCalendar, onReset }: 
       <div className="days" role="tablist">
         {days.map((d, n) => (
           <button key={d} role="tab" aria-selected={d === day} className={`day ${d === day ? 'on' : ''}`} onClick={() => setDay(d)}>
-            <small>DAY {n + 1}</small>{dayLabel(d).split(' ')[0]}<small>{dayLabel(d, true).split(', ')[1]}</small>
+            <small>Day {n + 1}</small>{dayLabel(d).split(' ')[0]}<small>{dayLabel(d, true).split(', ')[1]}</small>
           </button>
         ))}
       </div>

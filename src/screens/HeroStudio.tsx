@@ -24,7 +24,7 @@ export default function HeroStudio({ p, setAvatar, setNick, addInterest, account
       <div className="card studio">
         <Hero a={a} size={220} wave />
         <p className="nametag">{p.nick}</p>
-        <p className="label">JOB: {job.name.toUpperCase()}</p>
+        <p className="label">Job: {job.name}</p>
         <div className="row">
           <button className="btn small" onClick={() => setNick(randomNick())}>🎲 New name</button>
           <button className="btn small" onClick={() => {

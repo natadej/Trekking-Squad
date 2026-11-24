@@ -42,7 +42,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
       <div className="hello card">
         <Hero a={p.avatar} size={130} wave />
         <div>
-          <p className="label">Level {Math.min(99, 1 + Math.floor(p.points / 100))} · {(LOOKS.job[p.avatar.job ?? 0] ?? LOOKS.job[0]).name.toUpperCase()}</p>
+          <p className="label">Level {Math.min(99, 1 + Math.floor(p.points / 100))} · {(LOOKS.job[p.avatar.job ?? 0] ?? LOOKS.job[0]).name}</p>
           <h1>{p.nick}</h1>
           <p className="muted">{daysTo > 0 ? `${daysTo} days until Episode RIV2026 at Vegas!` : 'Episode RIV2026 at Vegas is ON!'}</p>
           <div className="chips">

@@ -214,7 +214,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="logo"><span>TREKKING <b>SQUAD</b></span><small>EPISODE: RIV2026 AT VEGAS</small></div>
+        <div className="logo"><span>Trekking <b>Squad</b></span><small>RIV2026 · Las Vegas</small></div>
         <span className="chip steps" title="Steps today">👣 {stepsToday.toLocaleString()}</span>
         <span className="chip gold zeny">🪙 {p.points.toLocaleString()} pts</span>
       </header>
