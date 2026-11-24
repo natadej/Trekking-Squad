@@ -6,6 +6,7 @@ import { dayLabel, hm, nowPT } from '../time';
 import { KIND, YesNo, mapsLink, placeName, uberLink } from '../ui';
 import { hotelName } from '../trip';
 import { travelMin } from '../planner';
+import { contestAvg, goalsOf, trophyOf } from '../trophy';
 
 const TIPS = [
   '💧 Drink a glass of water every hour. The desert air is very dry.',
@@ -40,7 +41,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
   return (
     <div className="screen">
       {(() => {
-        const st = p.steps?.[now.day] ?? 0, pct = Math.min(1, st / 10000), R = 52, L = 2 * Math.PI * R;
+        const st = p.steps?.[now.day] ?? 0, goal = goalsOf(p).day, pct = Math.min(1, st / goal), R = 52, L = 2 * Math.PI * R, c = contestAvg(p.steps), tr = trophyOf(c.avg);
         return (
           <div className="hero-banner">
             <div className="hb-left">
@@ -48,13 +49,13 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
               <div>
                 <h1>Hi, {p.nick.split(' ')[0]}</h1>
                 <p>{daysTo > 0 ? `${daysTo} days to re:Invent` : 'Your Vegas trip is on'}</p>
-                <span className="hb-pts">🪙 {p.points.toLocaleString()} pts · {p.coins.length} places</span>
+                <span className="hb-pts">{tr.icon} {c.avg.toLocaleString()} a day · {tr.id === 'none' ? 'no trophy yet' : tr.name}</span>
               </div>
             </div>
-            <button className="ring" onClick={() => go('top')} aria-label={`${st} of 10,000 steps today. Open the leaderboard`}>
+            <button className="ring" onClick={() => go('top')} aria-label={`${st} of ${goal.toLocaleString()} steps today. Open the leaderboard`}>
               <svg viewBox="0 0 120 120" aria-hidden><defs><linearGradient id="rg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="#fbbf24" /><stop offset="1" stopColor="#f472b6" /></linearGradient></defs>
                 <circle cx="60" cy="60" r={R} className="ring-bg" /><circle cx="60" cy="60" r={R} className="ring-fg" stroke="url(#rg)" strokeDasharray={L} strokeDashoffset={L * (1 - pct)} /></svg>
-              <span><b>{st.toLocaleString()}</b><small>of 10k steps</small></span>
+              <span><b>{st.toLocaleString()}</b><small>of {goal >= 1000 ? `${Math.round(goal / 100) / 10}k` : goal} steps</small></span>
             </button>
           </div>
         );

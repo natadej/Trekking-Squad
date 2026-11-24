@@ -97,5 +97,9 @@ export interface Profile {
   /** saved shops, "area|name" */
   wish: string[];
   calToken: string;
+  /** step goals chosen on the welcome screen */
+  goalDay?: number;
+  goalTrip?: number;
+  onboarded?: boolean;
   updatedAt: number;
 }

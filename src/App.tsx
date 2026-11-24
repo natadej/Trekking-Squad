@@ -3,7 +3,8 @@ import type { Avatar, PlanItem, Prefs, Profile, Session, Trip } from './types';
 import { loadProfile, questPoints, saveProfile } from './profile';
 import { buildPlan } from './planner';
 import { toIcs } from './ics';
-import { cloud, loadRemote, saveRemote, stepStats, syncCode, loadSyncCode, watchLeaders, watchUser, type CloudUser, type Leader } from './cloud';
+import { cloud, googleEnabled, loadRemote, saveRemote, signInGoogle, signOutCloud, stepStats, syncCode, loadSyncCode, watchLeaders, watchUser, type CloudUser, type Leader } from './cloud';
+import Welcome from './screens/Welcome';
 import { COLLECT_RADIUS_M, distanceM, placeById, type Place } from './data/places';
 import { nowPT } from './time';
 import Home, { type Question } from './screens/Home';
@@ -37,6 +38,8 @@ export default function App() {
   const [party, setParty] = useState(0);
   const [user, setUser] = useState<CloudUser | null>(null);
   const [leaders, setLeaders] = useState<Leader[]>([]);
+  const [google, setGoogle] = useState(false);
+  useEffect(() => { googleEnabled().then(setGoogle); }, []);
   const [me, setMe] = useState<{ lat: number; lng: number; acc: number; hdg?: number | null } | null>(null);
   const [gpsError, setGpsError] = useState<string>();
   const synced = useRef(false);
@@ -212,7 +215,11 @@ export default function App() {
   const account = (
     <div className="card">
       <h2>🔑 Use my profile on another phone</h2>
-      {!cloud() ? <p className="muted">Online save is not set up. Your profile is saved on this device.</p> : <>
+      {!cloud() ? <p className="muted">Online save is not set up. Your profile is saved on this device.</p> : user && !user.isAnonymous ? <>
+        <p>✅ Signed in with Google{user.email ? <> as <b>{user.email}</b></> : ''}. Sign in on any phone to continue.</p>
+        <button className="btn small ghost" onClick={signOutCloud}>Sign out</button>
+      </> : <>
+        {google && <button className="btn google big" onClick={signInGoogle}><span className="g-logo" aria-hidden>G</span> Continue with Google</button>}
         <p className="muted">✅ Your profile is saved online automatically. To use it on another phone or computer, copy this code there.</p>
         <p className="sync-code"><code>{syncCode()}</code></p>
         <button className="btn ghost" onClick={() => navigator.clipboard?.writeText(syncCode()).then(() => say('📋 Code copied. Keep it private.'), () => say('Copy did not work. Select the code and copy it.'))}>📋 Copy my code</button>
@@ -227,6 +234,13 @@ export default function App() {
           </form>
         </details>
       </>}
+    </div>
+  );
+
+  if (!p.onboarded) return (
+    <div className="app">
+      <Welcome p={p} user={user} google={google} onGoogle={signInGoogle} onDone={(x) => { update((o) => ({ ...o, ...x, onboarded: true })); startSteps(); say('👟 Ready. Walk to climb the ranking!', true); }} />
+      {toast && <div className="toast" role="status">{toast}</div>}
     </div>
   );
 

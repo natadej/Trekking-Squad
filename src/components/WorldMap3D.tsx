@@ -6,6 +6,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Avatar } from '../types';
 import { PLACES, STRIP_ROAD, distanceM, type Place } from '../data/places';
+import { ATTRACTIONS } from './scene3d';
 import { POI_ICON, bearing, compass, fromM, toM, type Poi, type PoiKind, type World } from '../data/world';
 import { MiniMap } from './WorldMap';
 import { O, PODIUM, buildWorld, makeAvatar, markTex, topOf, v3, type LL } from './scene3d';
@@ -24,7 +25,7 @@ interface Props {
   onPoi: (p: Poi) => void;
 }
 type Light = 'auto' | 'day' | 'night';
-const FOV = 50, PITCH_MIN = 0.35, PITCH_MAX = 1.35, WALK = 28;
+const FOV = 50, PITCH_MIN = 0.35, PITCH_MAX = 1.5, WALK = 28, MAX_D = 70000;
 const vegasHour = () => Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
 const isNight = (l: Light) => (l === 'auto' ? vegasHour() >= 17 || vegasHour() < 7 : l === 'night');
 /** Nearest Strip sidewalk to a point, so the character starts outside, not inside a hotel. */
@@ -44,8 +45,6 @@ export default function WorldMap3D(props: Props) {
   const box = useRef<HTMLDivElement>(null);
   const P = useRef(props);
   const tagEl = useRef<HTMLDivElement>(null);
-  const knob = useRef<HTMLElement>(null);
-  const joy = useRef({ x: 0, y: 0, on: false });
   const labelEls = useRef<Record<string, HTMLButtonElement | null>>({});
   const poiEls = useRef<Record<string, HTMLButtonElement | null>>({});
   const cam = useRef({ yaw: 0, pitch: 0.85, dist: 260, target: me ? v3(me) : curb(focus), follow: true, pos: me ? v3(me) : curb(focus), face: Math.PI });
@@ -111,7 +110,7 @@ export default function WorldMap3D(props: Props) {
       const k = (2 * C.dist * Math.tan((FOV * Math.PI) / 360)) / h;
       const right = new THREE.Vector3(Math.cos(C.yaw), 0, -Math.sin(C.yaw)), fwd = new THREE.Vector3(-Math.sin(C.yaw), 0, -Math.cos(C.yaw));
       C.target.addScaledVector(right, -dx * k).addScaledVector(fwd, (dy * k) / Math.sin(C.pitch));
-      C.target.x = THREE.MathUtils.clamp(C.target.x, -4000, 4000); C.target.z = THREE.MathUtils.clamp(C.target.z, -5000, 5000);
+      C.target.x = THREE.MathUtils.clamp(C.target.x, -40000, 40000); C.target.z = THREE.MathUtils.clamp(C.target.z, -40000, 40000);
       unfollow();
     };
     const two = () => { const [a, b] = [...pts.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y), a: Math.atan2(b.y - a.y, b.x - a.x), my: (a.y + b.y) / 2 }; };
@@ -121,7 +120,7 @@ export default function WorldMap3D(props: Props) {
       const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
       if (pts.size >= 2 && pinch) {
         const n = two();
-        C.dist = THREE.MathUtils.clamp(C.dist * (pinch.d / n.d), 40, 4000); C.yaw -= n.a - pinch.a;
+        C.dist = THREE.MathUtils.clamp(C.dist * (pinch.d / n.d), 40, MAX_D); C.yaw -= n.a - pinch.a;
         C.pitch = THREE.MathUtils.clamp(C.pitch + (n.my - pinch.my) * 0.004, PITCH_MIN, PITCH_MAX); pinch = n; return;
       }
       if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 6) start.moved = true;
@@ -139,12 +138,13 @@ export default function WorldMap3D(props: Props) {
       }
       if (pts.size === 0) start = null;
     };
-    const wheel = (e: WheelEvent) => { e.preventDefault(); C.dist = THREE.MathUtils.clamp(C.dist * (e.deltaY > 0 ? 1.12 : 0.89), 40, 4000); };
+    const wheel = (e: WheelEvent) => { e.preventDefault(); C.dist = THREE.MathUtils.clamp(C.dist * (e.deltaY > 0 ? 1.12 : 0.89), 40, MAX_D); };
     const ctx = (e: Event) => e.preventDefault();
     el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
     el.addEventListener('wheel', wheel, { passive: false }); el.addEventListener('contextmenu', ctx);
 
     const anchors = Object.fromEntries(PLACES.map((pl) => [pl.id, v3(pl, topOf(pl.id) + 16)]));
+    const aAnchors = Object.fromEntries(ATTRACTIONS.map((a) => [a.id, v3(a, a.h + 10)]));
     const tmp = new THREE.Vector3(), headV = new THREE.Vector3();
     type R = { l: number; t: number; r: number; b: number };
     const place = (node: HTMLElement | null | undefined, v: THREE.Vector3, maxD = 1e9, taken?: R[]) => {
@@ -171,7 +171,7 @@ export default function WorldMap3D(props: Props) {
     let ctrl: R[] = [];
     const readCtrl = () => {
       const o = el.getBoundingClientRect();
-      ctrl = [...el.querySelectorAll('.minimap, .wmini, .joy, .map-zoom, .m3-toggle, .next-hint')].map((n) => { const r = n.getBoundingClientRect(); return { l: r.left - o.left, r: r.right - o.left, t: r.top - o.top, b: r.bottom - o.top }; });
+      ctrl = [...el.querySelectorAll('.minimap, .wmini, .gps-only, .map-zoom, .m3-toggle, .next-hint')].map((n) => { const r = n.getBoundingClientRect(); return { l: r.left - o.left, r: r.right - o.left, t: r.top - o.top, b: r.bottom - o.top }; });
     };
     const last = { t: performance.now(), poi: 0, key: '' };
     let raf = 0;
@@ -181,28 +181,24 @@ export default function WorldMap3D(props: Props) {
       const p = P.current;
       const n = isNight(lightRef.current);
       if (n !== night) { night = n; W.setNight(n); setBloom(); }
-      // move the character: GPS when available, otherwise the on-screen joystick
+      // the character only moves with the phone's GPS
       const before = C.pos.clone();
-      const J = joy.current;
       if (p.me) C.pos.lerp(v3(p.me), Math.min(1, dt * 3));
-      else if (J.on && Math.hypot(J.x, J.y) > 0.08) {
-        const right = new THREE.Vector3(Math.cos(C.yaw), 0, -Math.sin(C.yaw)), fwd = new THREE.Vector3(-Math.sin(C.yaw), 0, -Math.cos(C.yaw));
-        C.pos.addScaledVector(right, J.x * WALK * dt).addScaledVector(fwd, -J.y * WALK * dt);
-        C.pos.x = THREE.MathUtils.clamp(C.pos.x, -4000, 4000); C.pos.z = THREE.MathUtils.clamp(C.pos.z, -5000, 5000);
-        if (!C.follow) { C.follow = true; setFollow(true); }
-      }
       const mv = C.pos.clone().sub(before), speed = mv.length() / Math.max(dt, 1e-3) / WALK;
       if (mv.lengthSq() > 1e-4) {
         const f = Math.atan2(mv.x, mv.z);
         C.face += Math.atan2(Math.sin(f - C.face), Math.cos(f - C.face)) * Math.min(1, dt * 10);
-        if (C.follow && J.on && J.y < -0.3) { const want = C.face + Math.PI; C.yaw += Math.atan2(Math.sin(want - C.yaw), Math.cos(want - C.yaw)) * Math.min(1, dt * 1.2); }
       }
       hero.g.position.x = C.pos.x; hero.g.position.z = C.pos.z; hero.g.rotation.y = C.face; hero.animate(speed, dt);
       ring.position.set(C.pos.x, 0.7, C.pos.z); ring.scale.setScalar(1 + 0.08 * Math.sin(t / 300));
       headV.set(C.pos.x, 15.5, C.pos.z);
       if (C.follow) C.target.lerp(C.pos, Math.min(1, dt * 6));
-      const cp = Math.cos(C.pitch) * C.dist;
-      camera.position.set(C.target.x + Math.sin(C.yaw) * cp, Math.max(4, Math.sin(C.pitch) * C.dist), C.target.z + Math.cos(C.yaw) * cp);
+      // far zoom: tilt toward a top-down sky view and push fog/clip planes out
+      const far = THREE.MathUtils.smoothstep(C.dist, 3000, 30000), pitch = C.pitch + (1.5 - C.pitch) * far * 0.6;
+      const cp = Math.cos(pitch) * C.dist;
+      const fg = scene.fog as THREE.Fog; fg.near = 1500 + C.dist * 1.2; fg.far = 7000 + C.dist * 4;
+      const nr = Math.max(1, C.dist / 400); if (Math.abs(camera.near - nr) > nr * 0.2) { camera.near = nr; camera.far = Math.max(30000, C.dist * 8); camera.updateProjectionMatrix(); }
+      camera.position.set(C.target.x + Math.sin(C.yaw) * cp, Math.max(4, Math.sin(pitch) * C.dist), C.target.z + Math.cos(C.yaw) * cp);
       camera.lookAt(C.target.x, C.target.y + 6, C.target.z);
       sun.position.set(C.target.x - 400, 800, C.target.z + 250); sun.target.position.copy(C.target);
       coins.forEach((m) => { m.visible = !p.collected.has(m.userData.id); m.rotation.z = t / 600; });
@@ -212,7 +208,8 @@ export default function WorldMap3D(props: Props) {
       if (hq) composer.render(); else renderer.render(scene, camera);
       place(tagEl.current, headV);
       const taken: R[] = [heroRect(), ...ctrl];
-      PLACES.forEach((pl) => place(labelEls.current[pl.id], anchors[pl.id], C.dist < 900 ? 2600 : 1e9, taken));
+      PLACES.forEach((pl) => place(labelEls.current[pl.id], anchors[pl.id], C.dist < 900 ? 2600 : C.dist < 9000 ? 1e9 : -1, taken));
+      ATTRACTIONS.forEach((a) => a.plate && place(labelEls.current['a:' + a.id], aAnchors[a.id], C.dist < 900 ? 2600 : C.dist < 6000 ? 1e9 : -1, taken));
       for (const node of Object.values(poiEls.current)) if (node) place(node, new THREE.Vector3(Number(node.dataset.x), PODIUM + 6, Number(node.dataset.z)), 1e9, taken);
       if (t - last.poi > 400) {
         last.poi = t; readCtrl();
@@ -236,15 +233,6 @@ export default function WorldMap3D(props: Props) {
 
   const C = cam.current;
   const from = me ?? view.hero;
-  const joyMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!joy.current.on) return;
-    const r = e.currentTarget.getBoundingClientRect(), R = r.width / 2;
-    let x = (e.clientX - r.left - R) / R, y = (e.clientY - r.top - R) / R;
-    const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; }
-    joy.current.x = x; joy.current.y = y;
-    if (knob.current) knob.current.style.transform = `translate(${x * R * 0.6}px, ${y * R * 0.6}px)`;
-  };
-  const joyEnd = () => { joy.current = { x: 0, y: 0, on: false }; if (knob.current) knob.current.style.transform = ''; };
   if (failed) return <p className="tip">⚠️ This device can't show the 3D map. Use the World map button instead.</p>;
   const night = isNight(light);
   return (
@@ -253,6 +241,10 @@ export default function WorldMap3D(props: Props) {
         {PLACES.map((pl) => (
           <button key={pl.id} ref={(n) => { labelEls.current[pl.id] = n; }} className={`plate ${pl.kind}`} onClick={() => onPick(pl)}>{pl.icon} {pl.short}</button>
         ))}
+        {ATTRACTIONS.filter((a) => a.plate).map((a) => {
+          const pl = PLACES.find((x) => x.id === a.place);
+          return <button key={a.id} ref={(n) => { labelEls.current['a:' + a.id] = n; }} className="plate fun sight" onClick={() => pl && onPick(pl)}>{a.icon} {a.name}</button>;
+        })}
         {pois.map((x) => {
           const m = toM(O, x.lat, x.lng), k = x.n + x.lat;
           return <button key={k} ref={(n) => { poiEls.current[k] = n; }} data-x={m.x} data-z={m.y} className={`poi3 ${x.k} ${props.booked(x) ? 'lock' : ''}`} onClick={() => props.onPoi(x)}>{POI_ICON[x.k]}{props.booked(x) ? '🔒' : ''} <span>{x.n.length > 20 ? x.n.slice(0, 19) + '…' : x.n}</span></button>;
@@ -265,15 +257,12 @@ export default function WorldMap3D(props: Props) {
         </button>
         <button onClick={() => setHq(!hq)} aria-label="Change graphics quality">{hq ? 'HD' : 'Lite'}</button>
       </div>
-      {!me && (
-        <div className="joy" onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); joy.current.on = true; joyMove(e); }} onPointerMove={joyMove} onPointerUp={joyEnd} onPointerCancel={joyEnd} role="application" aria-label="Walk joystick">
-          <span>Walk</span><i ref={knob} />
-        </div>
-      )}
+      {!me && <div className="gps-only" role="status">📍 Your character moves only with your phone's location. Allow location to start.</div>}
       <MiniMap center={view.c} me={me ?? view.hero} hdg={me?.hdg ?? (next ? bearing(from, next.place) : undefined)} next={next?.place} view={{ w: view.w, h: view.h }} onJump={(c) => { C.target.copy(v3(c)); C.follow = false; setFollow(false); }} />
       <div className="map-zoom" onPointerDown={(e) => e.stopPropagation()}>
-        <button onClick={() => { C.dist = Math.max(40, C.dist * 0.7); }} aria-label="Zoom in">+</button>
-        <button onClick={() => { C.dist = Math.min(4000, C.dist * 1.4); }} aria-label="Zoom out">−</button>
+        <button onClick={() => { C.dist = Math.max(40, C.dist * 0.6); }} aria-label="Zoom in">+</button>
+        <button onClick={() => { C.dist = Math.min(MAX_D, C.dist * 1.6); }} aria-label="Zoom out">−</button>
+        <button onClick={() => { C.dist = C.dist > 8000 ? 260 : 45000; }} aria-label="Sky view or street view">🛰️</button>
         <button onClick={() => { C.yaw += Math.PI / 4; }} aria-label="Turn left">⟲</button>
         <button onClick={() => { C.yaw -= Math.PI / 4; }} aria-label="Turn right">⟳</button>
         <button className={follow ? 'on' : ''} aria-pressed={follow} onClick={() => { C.follow = true; setFollow(true); }} aria-label={me ? 'Follow me' : 'Back to my character'}>◎</button>
