@@ -218,7 +218,7 @@ export default function App() {
         <span className="chip steps" title="Steps today">👣 {stepsToday.toLocaleString()}</span>
         <span className="chip gold zeny">🪙 {p.points.toLocaleString()} pts</span>
       </header>
-      {tab === 'home' && <Home p={p} plan={plan} questions={questions} onImport={() => setImporting(true)} go={(t) => setTab(t as Tab)} checkIn={checkIn} />}
+      {tab === 'home' && <Home p={p} plan={plan} questions={questions} onImport={() => setImporting(true)} go={(t) => { if (t === 'map') setMapMode('strip'); setTab(t as Tab); scrollTo(0, 0); }} checkIn={checkIn} />}
       {tab === 'plan' && <Plan p={p} plan={plan}
         onRemove={(i) => update((x) => ({ ...x, removed: [...x.removed, i.code || i.id], added: x.added.filter((c) => c !== i.code), custom: x.custom.filter((c) => c.id !== i.id) }))}
         onAdd={(i: PlanItem) => update((x) => ({ ...x, custom: [...x.custom, i] }))}
