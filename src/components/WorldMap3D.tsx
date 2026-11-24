@@ -278,7 +278,8 @@ export default function WorldMap3D(props: Props) {
       if (tmp.z > 1 || d > maxD || Math.abs(tmp.x) > 1.2 || Math.abs(tmp.y) > 1.2) { node.style.display = 'none'; return; }
       const sx = ((tmp.x + 1) / 2) * w, sy = ((1 - tmp.y) / 2) * h;
       if (taken) {
-        const bw = node.offsetWidth || 80, bh = node.offsetHeight || 20, rc = { l: sx - bw / 2 - 2, r: sx + bw / 2 + 2, t: sy - bh - 2, b: sy + 2 };
+        if (node.offsetWidth) { node.dataset.w = String(node.offsetWidth); node.dataset.h = String(node.offsetHeight); }
+        const bw = Number(node.dataset.w) || 80, bh = Number(node.dataset.h) || 20, rc = { l: sx - bw / 2 - 2, r: sx + bw / 2 + 2, t: sy - bh - 2, b: sy + 2 };
         if (taken.some((o) => rc.l < o.r && rc.r > o.l && rc.t < o.b && rc.b > o.t)) { node.style.display = 'none'; return; }
         taken.push(rc);
       }

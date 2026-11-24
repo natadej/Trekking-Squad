@@ -257,4 +257,4 @@ button.link { background: none; border: 0; padding: 8px 2px; text-align: left; w
 .hero3 b { font: 800 .72rem Nunito, sans-serif; color: #7dffa1; background: rgba(0, 0, 0, .55); padding: 0 5px; border-radius: 3px; }
 .fullmap { position: fixed; inset: 0; z-index: 50; background: var(--card); display: flex; flex-direction: column; }
 .fullmap .sheet-head { margin: 0; }
-.fullmap .wmap { flex: 1; height: auto; border-radius: 0; background: #f1e2bd; }
+.fullmap .wmap { flex: 1; height: calc(100dvh - 64px); min-height: 0; border-radius: 0; background: #f1e2bd; }
