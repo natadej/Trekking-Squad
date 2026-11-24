@@ -434,3 +434,5 @@ details.start[open] summary { margin-bottom: 12px; }
 .pc-hero { padding-bottom: 26px; }
 .pc-plan { margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: #faf7ff; border: 1px solid #ece6f5; }
 .cats .chip.on::after, .tab.on::after { content: none; }
+.cats .chip.on::before, .pc-tabs button.on::before { content: '✓ '; font-weight: 800; }
+.tab.on { box-shadow: inset 0 3px 0 #ffd877; font-weight: 800; }
