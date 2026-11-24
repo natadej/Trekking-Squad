@@ -1,96 +1,85 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { nowPT } from './time';
-import {
-  GoogleAuthProvider, getAuth, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithCredential,
-  signInWithPopup, signOut, type Auth, type User,
-} from 'firebase/auth';
-import {
-  collection, doc, getDoc, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, type Firestore,
-} from 'firebase/firestore';
 import type { Avatar, Profile } from './types';
 
-const CFG_KEY = 'vq.cloud.v1';
+// Online save + world leaderboard on Supabase. No sign-up: each device gets a random id + secret,
+// and the "sync code" (id.secret) moves the same profile to another device. Schema: supabase/schema.sql.
+const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const ID_KEY = 'tsq.id.v1';
 
-function config(): Record<string, string> | null {
-  const env = import.meta.env.VITE_FIREBASE_CONFIG as string | undefined;
-  const raw = env || localStorage.getItem(CFG_KEY);
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
-}
+export interface CloudUser { uid: string; secret: string; isAnonymous: boolean }
+export interface Leader { uid: string; nick: string; points: number; avatar: Avatar; coins: number; stepsDay?: string; stepsToday?: number; stepsTotal?: number }
 
-export const setCloudConfig = (json: string) => { JSON.parse(json); localStorage.setItem(CFG_KEY, json); };
+export const cloud = () => (URL && KEY ? { url: URL, key: KEY } : null);
 
-let app: FirebaseApp | undefined, auth: Auth | undefined, db: Firestore | undefined;
-
-export function cloud() {
-  if (!app) {
-    const c = config();
-    if (!c) return null;
-    app = initializeApp(c);
-    auth = getAuth(app);
-    db = getFirestore(app);
-  }
-  return { auth: auth!, db: db! };
-}
-
-export function watchUser(cb: (u: User | null) => void) {
+async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   const c = cloud();
-  if (!c) { cb(null); return () => {}; }
-  return onAuthStateChanged(c.auth, async (u) => {
-    if (!u) {
-      try { await signInAnonymously(c.auth); } catch { cb(null); }
-      return;
-    }
-    cb(u);
+  if (!c) throw new Error('Online save is not set up');
+  const r = await fetch(`${c.url}/rest/v1/rpc/${fn}`, {
+    method: 'POST', headers: { apikey: c.key, Authorization: `Bearer ${c.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(args),
+  });
+  if (!r.ok) throw new Error(`${fn} failed (${r.status})`);
+  return r.json() as Promise<T>;
+}
+
+const hex = (n: number) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, '0')).join('');
+
+function identity(): CloudUser {
+  try {
+    const s = JSON.parse(localStorage.getItem(ID_KEY) ?? '');
+    if (s?.uid && s?.secret) return { ...s, isAnonymous: true };
+  } catch { /* new device */ }
+  const u = { uid: crypto.randomUUID(), secret: hex(16) };
+  localStorage.setItem(ID_KEY, JSON.stringify(u));
+  return { ...u, isAnonymous: true };
+}
+
+let listener: ((u: CloudUser | null) => void) | undefined;
+export function watchUser(cb: (u: CloudUser | null) => void) {
+  listener = cb;
+  cb(cloud() ? identity() : null);
+  return () => { listener = undefined; };
+}
+
+export const syncCode = () => { const u = identity(); return `${u.uid}.${u.secret}`; };
+
+/** Switch this device to the profile behind a sync code from another device. */
+export async function loadSyncCode(code: string) {
+  const m = code.trim().match(/^([0-9a-f-]{36})\.([0-9a-f]{24,})$/i);
+  if (!m) throw new Error('That code does not look right');
+  const prof = await rpc<Profile | null>('tsq_load', { p_id: m[1], p_secret: m[2] });
+  if (!prof) throw new Error('No profile found for that code');
+  localStorage.setItem(ID_KEY, JSON.stringify({ uid: m[1], secret: m[2] }));
+  listener?.(identity());
+  return prof;
+}
+
+export async function loadRemote(u: CloudUser): Promise<Profile | null> {
+  return cloud() ? rpc<Profile | null>('tsq_load', { p_id: u.uid, p_secret: u.secret }) : null;
+}
+
+export async function saveRemote(u: CloudUser, p: Profile) {
+  if (!cloud()) return;
+  const s = stepStats(p);
+  await rpc('tsq_save', {
+    p_id: u.uid, p_secret: u.secret, p_profile: p, p_nick: p.nick.slice(0, 24), p_points: p.points, p_coins: p.coins.length, p_avatar: p.avatar,
+    p_steps_day: s.stepsDay, p_steps_today: s.stepsToday, p_steps_total: s.stepsTotal,
   });
 }
-
-export async function signInGoogle() {
-  const c = cloud();
-  if (!c) throw new Error('Cloud save is not set up yet');
-  const provider = new GoogleAuthProvider();
-  const cur = c.auth.currentUser;
-  if (cur?.isAnonymous) {
-    try {
-      return (await linkWithPopup(cur, provider)).user;
-    } catch (e: unknown) {
-      const cred = GoogleAuthProvider.credentialFromError(e as never);
-      if (cred) return (await signInWithCredential(c.auth, cred)).user;
-      throw e;
-    }
-  }
-  return (await signInWithPopup(c.auth, provider)).user;
-}
-
-export const signOutCloud = async () => { const c = cloud(); if (c) await signOut(c.auth); };
-
-export async function loadRemote(uid: string): Promise<Profile | null> {
-  const c = cloud();
-  if (!c) return null;
-  const s = await getDoc(doc(c.db, 'vq_profiles', uid));
-  return s.exists() ? (JSON.parse(s.data().json) as Profile) : null;
-}
-
-export async function saveRemote(uid: string, p: Profile, icsText: string) {
-  const c = cloud();
-  if (!c) return;
-  await Promise.all([
-    setDoc(doc(c.db, 'vq_profiles', uid), { json: JSON.stringify(p), updatedAt: p.updatedAt }),
-    setDoc(doc(c.db, 'vq_leaders', uid), { nick: p.nick.slice(0, 24), points: p.points, avatar: p.avatar, coins: p.coins.length, ...stepStats(p), at: serverTimestamp() }),
-    setDoc(doc(c.db, 'vq_cal', p.calToken), { uid, ics: icsText, at: serverTimestamp() }),
-  ]);
-}
-
-export interface Leader { uid: string; nick: string; points: number; avatar: Avatar; coins: number; stepsDay?: string; stepsToday?: number; stepsTotal?: number }
 
 export const stepStats = (p: Profile) => {
   const day = nowPT().day, steps = p.steps ?? {};
   return { stepsDay: day, stepsToday: steps[day] ?? 0, stepsTotal: Object.values(steps).reduce((a, b) => a + b, 0) };
 };
 
-export function watchLeaders(cb: (rows: Leader[]) => void) {
-  const c = cloud();
-  if (!c) return () => {};
-  const q = query(collection(c.db, 'vq_leaders'), orderBy('stepsTotal', 'desc'), limit(50));
-  return onSnapshot(q, (s) => cb(s.docs.map((d) => ({ uid: d.id, ...(d.data() as Omit<Leader, 'uid'>) }))), () => cb([]));
+interface Row { id: string; nick: string; points: number; coins: number; avatar: Avatar; steps_day: string; steps_today: number; steps_total: number }
+export function watchLeaders(cb: (rows: Leader[]) => void, everyMs = 15000) {
+  if (!cloud()) return () => {};
+  let on = true;
+  const pull = () => rpc<Row[]>('tsq_leaders', { p_limit: 50 })
+    .then((rows) => on && cb(rows.map((r) => ({ uid: r.id, nick: r.nick, points: r.points, coins: r.coins, avatar: r.avatar, stepsDay: r.steps_day, stepsToday: r.steps_today, stepsTotal: r.steps_total }))))
+    .catch(() => undefined);
+  pull();
+  const t = setInterval(pull, everyMs);
+  return () => { on = false; clearInterval(t); };
 }

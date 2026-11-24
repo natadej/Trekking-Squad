@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { User } from 'firebase/auth';
 import type { Avatar, PlanItem, Prefs, Profile, Session, Trip } from './types';
 import { loadProfile, questPoints, saveProfile } from './profile';
 import { buildPlan } from './planner';
 import { toIcs } from './ics';
-import { cloud, loadRemote, saveRemote, signInGoogle, signOutCloud, watchLeaders, watchUser, type Leader } from './cloud';
+import { cloud, loadRemote, saveRemote, syncCode, loadSyncCode, watchLeaders, watchUser, type CloudUser, type Leader } from './cloud';
 import { COLLECT_RADIUS_M, distanceM, placeById, type Place } from './data/places';
 import { nowPT } from './time';
 import Home, { type Question } from './screens/Home';
@@ -36,7 +35,7 @@ export default function App() {
   const [importing, setImporting] = useState(!!shared);
   const [toast, setToast] = useState<string>();
   const [party, setParty] = useState(0);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<CloudUser | null>(null);
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [me, setMe] = useState<{ lat: number; lng: number; acc: number; hdg?: number | null } | null>(null);
   const [gpsError, setGpsError] = useState<string>();
@@ -81,17 +80,16 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     synced.current = false;
-    loadRemote(user.uid).then((r) => {
+    loadRemote(user).then((r) => {
       if (r && r.updatedAt > p.updatedAt) { const m = { ...r, steps: r.steps ?? {}, wish: r.wish ?? [] }; setP(m); saveProfile(m); }
       synced.current = true;
     }).catch(() => { synced.current = true; });
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!user || !synced.current) return;
-    const t = setTimeout(() => saveRemote(user.uid, p, ics).catch(() => {}), 1200);
+    const t = setTimeout(() => saveRemote(user, p).catch(() => {}), 1200);
     return () => clearTimeout(t);
-  }, [p, ics, user]);
-  useEffect(() => { if (user && !user.isAnonymous) award('signin'); }, [user, award]);
+  }, [p, user]);
 
   // quests that complete themselves
   useEffect(() => {
@@ -199,15 +197,22 @@ export default function App() {
 
   const account = (
     <div className="card">
-      <h2>🔑 Back up my profile</h2>
-      {!cloud() ? <p className="muted">Online save is coming soon. Your profile is saved on this device.</p>
-        : user && !user.isAnonymous ? <>
-          <p>✅ Saved to <b>{user.email}</b>. Sign in on any phone or computer to continue.</p>
-          <button className="btn small ghost" onClick={() => signOutCloud()}>Sign out</button>
-        </> : <>
-          <p className="muted">Sign in with Google to use your profile on every device.</p>
-          <button className="btn primary big" onClick={() => signInGoogle().then(() => say('🔑 Profile backed up.', true)).catch(() => say('Sign-in did not finish. Please try again.'))}>Sign in with Google</button>
-        </>}
+      <h2>🔑 Use my profile on another phone</h2>
+      {!cloud() ? <p className="muted">Online save is not set up. Your profile is saved on this device.</p> : <>
+        <p className="muted">✅ Your profile is saved online automatically. To use it on another phone or computer, copy this code there.</p>
+        <p className="sync-code"><code>{syncCode()}</code></p>
+        <button className="btn ghost" onClick={() => navigator.clipboard?.writeText(syncCode()).then(() => say('📋 Code copied. Keep it private.'), () => say('Copy did not work. Select the code and copy it.'))}>📋 Copy my code</button>
+        <details className="sync-use"><summary>I have a code from another device</summary>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const v = new FormData(e.currentTarget).get('code') as string;
+            loadSyncCode(v).then((r) => { const m = { ...r, steps: r.steps ?? {}, wish: r.wish ?? [] }; setP(m); saveProfile(m); award('signin'); say('🔑 Profile loaded.', true); }).catch((er: Error) => say(er.message));
+          }}>
+            <input name="code" placeholder="Paste the code" autoComplete="off" aria-label="Sync code" />
+            <button className="btn primary">Load my profile</button>
+          </form>
+        </details>
+      </>}
     </div>
   );
 

@@ -436,3 +436,6 @@ details.start[open] summary { margin-bottom: 12px; }
 .cats .chip.on::after, .tab.on::after { content: none; }
 .cats .chip.on::before, .pc-tabs button.on::before { content: '✓ '; font-weight: 800; }
 .tab.on { box-shadow: inset 0 3px 0 #ffd877; font-weight: 800; }
+.sync-code code { display: block; padding: 10px 12px; border-radius: 12px; background: #f5f0ff; color: #4c1d95; font-size: .8rem; word-break: break-all; }
+.sync-use { margin-top: 10px; } .sync-use summary { cursor: pointer; font-weight: 700; color: var(--violet); }
+.sync-use form { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }

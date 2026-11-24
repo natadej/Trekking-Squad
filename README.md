@@ -8,7 +8,7 @@
 - **Classes**: 10 interest tiles, level and style; search, star and reserve on the AWS catalog.
 - **Map**: cartoon Strip from real coordinates: 15 hotels, 5 venues, airport, landmarks. GPS moves your hero; collect coins within 160 m of a place.
 - **Calendar**: export the plan as `.ics` for Google, Outlook or Apple Calendar.
-- **Cloud (optional)**: Firebase Google/guest sign-in syncs the profile across devices and powers a live global leaderboard.
+- **Cloud**: Supabase saves the profile online with no sign-up (a private sync code moves it to another device) and powers the world step leaderboard.
 
 ## Develop
 
@@ -19,7 +19,7 @@ npm test        # parser + planner tests
 npm run build
 ```
 
-Cloud save is off unless `VITE_FIREBASE_CONFIG` (Firebase web config JSON) is set at build time, e.g. as a repo Actions variable. Without it the game saves on the device only.
+Cloud save uses the public Supabase URL and anon key in `.env.production`; the schema and secret-checked functions are in `supabase/schema.sql`. Remove those values to keep saves on the device only.
 
 ## Data
 
