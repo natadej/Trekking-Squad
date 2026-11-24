@@ -160,7 +160,8 @@ export default function WorldMap3D(props: Props) {
     const heroRect = (): R => {
       tmp.copy(C.pos).project(camera); const fx = ((tmp.x + 1) / 2) * w, fy = ((1 - tmp.y) / 2) * h;
       tmp.copy(headV).project(camera); const hy = ((1 - tmp.y) / 2) * h, half = Math.max(14, (fy - hy) * 0.3);
-      return { l: fx - half, r: fx + half, t: hy - 26, b: fy };
+      const tw = Math.max(half, (tagEl.current?.offsetWidth ?? 0) / 2 + 4), th = (tagEl.current?.offsetHeight ?? 22) + 4;
+      return { l: fx - tw, r: fx + tw, t: hy - th, b: fy };
     };
     let ctrl: R[] = [];
     const readCtrl = () => {
