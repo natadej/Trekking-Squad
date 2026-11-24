@@ -1,6 +1,5 @@
-import { cloud } from '../cloud';
 import { useState } from 'react';
-import { stepStats, type Leader } from '../cloud';
+import { cloud, stepStats, type Leader } from '../cloud';
 import type { Profile } from '../types';
 import { nowPT } from '../time';
 import Hero from '../components/Hero';
