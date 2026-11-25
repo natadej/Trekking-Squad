@@ -20,6 +20,7 @@ interface Props {
   addPlan: (i: PlanItem) => void;
   onShop: () => void;
   toggleFav: (id: string) => void;
+  onWhere: () => void;
 }
 
 const fmt = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1609).toFixed(1)} miles`);
@@ -33,7 +34,7 @@ function vegasNow() {
   return { day: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`, min: t.getHours() * 60 + t.getMinutes() };
 }
 
-export default function MapScreen({ p, me, gpsError, startGps, collect, today, addPlan, onShop, toggleFav }: Props) {
+export default function MapScreen({ p, me, gpsError, startGps, collect, today, addPlan, onShop, toggleFav, onWhere }: Props) {
   const [favOnly, setFavOnly] = useState(false);
   const favs = useMemo(() => new Set(p.fav ?? []), [p.fav]);
   const [view, setView] = useState<'map' | '3d'>(() => (EP.id === 'vegas' && localStorage.getItem(VIEW_KEY) === '3d' ? '3d' : 'map'));
@@ -84,6 +85,7 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today, a
             ))}
           </div>
           {!me && <button className="btn primary small find-me" onClick={startGps}>📍 Find me</button>}
+          {mapProps.me && <button className="btn small find-me" onClick={onWhere}>📍 Check in here</button>}
           {gpsError && <p className="tip small">⚠️ {gpsError}</p>}
           {near && canGet(near.pl) && <button className="btn gold pop" onClick={() => collect(near.pl)}>🪙 Collect +{near.pl.coins} at {near.pl.short}</button>}
         </div>

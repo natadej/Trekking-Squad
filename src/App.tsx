@@ -6,6 +6,8 @@ import { GCAL_PREFIX, syncCalendar } from './gcal';
 import { toIcs } from './ics';
 import { cloud, googleEnabled, loadRemote, saveRemote, signOutCloud, stepStats, syncCode, loadSyncCode, watchLeaders, watchUser, type CloudUser, type Leader } from './cloud';
 import Welcome, { EpisodePicker } from './screens/Welcome';
+import { StopDetector, askedNear, markAsked, type NearPlace } from './nearby';
+import WhereSheet from './screens/WhereSheet';
 import { EP } from './episode';
 import { COLLECT_RADIUS_M, distanceM, placeById, type Place } from './data/places';
 import { nowPT } from './time';
@@ -55,6 +57,8 @@ export default function App() {
   const pend = useRef(0);
   const lastStep = useRef(0);
   const lastFix = useRef<{ lat: number; lng: number; t: number }>(undefined);
+  const stops = useRef(new StopDetector());
+  const [where, setWhere] = useState<{ lat: number; lng: number }>();
   const shownFix = useRef<{ lat: number; lng: number; acc: number; t: number }>(undefined);
 
   useEffect(() => {
@@ -178,6 +182,8 @@ export default function App() {
           shownFix.current = { lat, lng, acc: c.accuracy, t: now };
           setMe({ lat, lng, acc: Math.round(c.accuracy), hdg: c.speed && c.speed > 0.5 ? c.heading : null });
         }
+        const stop = stops.current.push({ lat: c.latitude, lng: c.longitude, acc: c.accuracy, t: now });
+        if (stop && document.visibilityState === 'visible' && !askedNear(stop)) { markAsked(stop); setWhere((w) => w ?? { lat: stop.lat, lng: stop.lng }); }
         const f = { lat: pos.coords.latitude, lng: pos.coords.longitude, t: Date.now() }, prev = lastFix.current;
         if (pos.coords.accuracy > 35) return;
         if (!prev) { lastFix.current = f; return; }
@@ -210,6 +216,16 @@ export default function App() {
     const w = x.wish ?? [];
     return { ...x, wish: w.includes(k) ? w.filter((y) => y !== k) : [...w, k] };
   });
+
+  const visited = useMemo(() => new Set((p.visits ?? []).map((v) => v.id)), [p.visits]);
+  const checkInAt = (x: NearPlace) => {
+    setWhere(undefined);
+    if (visited.has(x.id)) { say(`📍 You're at ${x.name}. Already checked in.`); return; }
+    const own = x.own ? placeById(x.own) : undefined;
+    const bonus = 20 + (own && !p.coins.includes(own.id) ? own.coins : 0);
+    update((o) => ({ ...o, visits: [...(o.visits ?? []), { id: x.id, name: x.name, lat: x.lat, lng: x.lng, day: nowPT().day }], coins: own && !o.coins.includes(own.id) ? [...o.coins, own.id] : o.coins, points: o.points + bonus }));
+    say(`📍 Checked in at ${x.name}! +${bonus} points`, true);
+  };
 
   const collect = (pl: Place) => {
     if (!me || distanceM(me, pl) > COLLECT_RADIUS_M) return;
@@ -323,7 +339,7 @@ export default function App() {
         </div>
       )}
       {tab === 'map' && mapMode === 'shop' && <ShopScreen p={p} me={me} stepsToday={stepsToday} counting={counting} startSteps={startSteps} collectSpot={collectSpot} addPlan={addPlan} toggleWish={toggleWish} />}
-      {tab === 'map' && mapMode === 'strip' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} addPlan={addPlan} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} onShop={() => setMapMode('shop')} toggleFav={(id) => update((x) => { const f = x.fav ?? []; return { ...x, fav: f.includes(id) ? f.filter((y) => y !== id) : [...f, id] }; })} />}
+      {tab === 'map' && mapMode === 'strip' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} addPlan={addPlan} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} onShop={() => setMapMode('shop')} onWhere={() => me && setWhere({ lat: me.lat, lng: me.lng })} toggleFav={(id) => update((x) => { const f = x.fav ?? []; return { ...x, fav: f.includes(id) ? f.filter((y) => y !== id) : [...f, id] }; })} />}
       {tab === 'classes' && <Classes p={p} sessions={sessions} planned={new Set(plan.map((i) => i.code).filter(Boolean) as string[])}
         setPrefs={(f: (x: Prefs) => Prefs) => update((x) => ({ ...x, prefs: f(x.prefs) }))}
         me={me} onLearn={(s, w) => update((x) => ({ ...x, learn: learnFrom(x.learn, s, w) }))}
@@ -334,6 +350,7 @@ export default function App() {
         addInterest={(id) => { update((x) => ({ ...x, prefs: { ...x.prefs, interests: x.prefs.interests.includes(id) ? x.prefs.interests : [...x.prefs.interests, id] } })); say('⭐ Added. Class suggestions now include this topic.', true); }} account={account} />}
       {tab === 'top' && <Leaders p={p} rows={leaders} uid={user?.uid} live={!!user && leaders.length > 0} counting={counting} startSteps={startSteps} />}
 
+      {where && <WhereSheet here={where} visited={visited} onPick={checkInAt} onClose={() => setWhere(undefined)} />}
       {importing && <ImportSheet initial={shared} onClose={() => setImporting(false)} onDone={(t) => { setTrip(t); setImporting(false); say('✅ Trip saved. Your plan is updated.', true); }} />}
       {toast && <div className="toast" role="status">{toast}</div>}
       {party > 0 && <div className="confetti" key={party} aria-hidden>{Array.from({ length: 28 }, (_, i) => <i key={i} style={{ left: `${(i * 37) % 100}%`, background: ['#facc15', '#f472b6', '#60a5fa', '#34d399', '#a78bfa'][i % 5], animationDelay: `${(i % 7) * 0.08}s` }} />)}</div>}

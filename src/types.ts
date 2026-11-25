@@ -108,6 +108,8 @@ export interface Profile {
   walks?: { id: string; day: string; steps: number }[];
   /** walk challenge in progress */
   walkNow?: Walk;
+  /** places the user checked in at ("Where are you?") */
+  visits?: { id: string; name: string; lat: number; lng: number; day: string }[];
   /** favourite place ids */
   fav?: string[];
   /** learned class taste: topic/area/type -> weight */
