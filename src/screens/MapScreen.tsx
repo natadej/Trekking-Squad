@@ -18,6 +18,7 @@ interface Props {
   today: PlanItem[];
   addPlan: (i: PlanItem) => void;
   onShop: () => void;
+  toggleFav: (id: string) => void;
 }
 
 const fmt = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1609).toFixed(1)} miles`);
@@ -31,7 +32,9 @@ function vegasNow() {
   return { day: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`, min: t.getHours() * 60 + t.getMinutes() };
 }
 
-export default function MapScreen({ p, me, gpsError, startGps, collect, today, addPlan, onShop }: Props) {
+export default function MapScreen({ p, me, gpsError, startGps, collect, today, addPlan, onShop, toggleFav }: Props) {
+  const [favOnly, setFavOnly] = useState(false);
+  const favs = useMemo(() => new Set(p.fav ?? []), [p.fav]);
   const [view, setView] = useState<'map' | '3d'>(() => (localStorage.getItem(VIEW_KEY) === '3d' ? '3d' : 'map'));
   useEffect(() => { localStorage.setItem(VIEW_KEY, view); }, [view]);
   const [pick, setPick] = useState<Place>();
@@ -58,7 +61,7 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today, a
   const toggle = (k: PoiKind) => setKinds((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   const walk = (x: { lat: number; lng: number }) => `https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}&travelmode=walking`;
 
-  const mapProps = { me: me && me.lat < 36.2 && me.lat > 36 && me.lng > -115.3 && me.lng < -115 ? me : null, avatar: p.avatar, nick: p.nick, collected: got, focus: home, next, kinds, booked,
+  const mapProps = { me: me && me.lat < 36.2 && me.lat > 36 && me.lng > -115.3 && me.lng < -115 ? me : null, avatar: p.avatar, nick: p.nick, collected: got, focus: home, next, kinds: favOnly ? new Set<PoiKind>() : kinds, booked, only: favOnly ? favs : undefined,
     onPick: (x: Place) => { setFull(false); setPoi(undefined); setPick(x); }, onPoi: (x: Poi) => { setFull(false); setPick(undefined); setPoi(x); } };
   const loading = <div className="map3d loading">Loading the map…</div>;
   return (
@@ -74,7 +77,8 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today, a
             <button onClick={onShop}>Shops</button>
           </div>
           <div className="chips cats" role="group" aria-label="Show on map">
-            {KINDS.map((k) => (
+            <button className={`chip ${favOnly ? 'on' : ''}`} aria-pressed={favOnly} onClick={() => setFavOnly(!favOnly)}>⭐ Favourites{favs.size ? ` (${favs.size})` : ''}</button>
+            {!favOnly && KINDS.map((k) => (
               <button key={k} className={`chip ${kinds.has(k) ? 'on' : ''}`} aria-pressed={kinds.has(k)} onClick={() => toggle(k)}>{POI_ICON[k]} {POI_LABEL[k]}</button>
             ))}
           </div>
@@ -96,7 +100,7 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today, a
       </div>
 
       {pick && <PlaceCard place={pick} p={p} addPlan={addPlan} inside={inside(pick)} collected={got.has(pick.id)} distance={me ? distanceM(me, pick) : undefined} canCollect={canGet(pick)} booked={booked}
-        onPoi={(x) => { setPick(undefined); setPoi(x); }} onCollect={() => { collect(pick); setPick(undefined); }} onClose={() => setPick(undefined)} />}
+        onPoi={(x) => { setPick(undefined); setPoi(x); }} onCollect={() => { collect(pick); setPick(undefined); }} onClose={() => setPick(undefined)} fav={favs.has(pick.id)} onFav={() => toggleFav(pick.id)} />}
 
       {poi && (
         <div className="sheet-bg" onClick={() => setPoi(undefined)}>

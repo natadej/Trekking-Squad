@@ -14,12 +14,14 @@ interface Props {
   kinds: Set<PoiKind>;
   onPick: (p: Place) => void;
   onPoi: (p: Poi) => void;
+  /** show only these place ids (favourites) */
+  only?: Set<string>;
 }
 
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 /** A real street map with the same gestures as Google Maps: drag, pinch, twist to rotate, two-finger drag to tilt. */
-export default function RealMap({ world, me, nick, collected, focus, next, kinds, onPick, onPoi }: Props) {
+export default function RealMap({ world, me, nick, collected, focus, next, kinds, onPick, onPoi, only }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | undefined>(undefined);
   const meMark = useRef<maplibregl.Marker | undefined>(undefined);
@@ -63,16 +65,17 @@ export default function RealMap({ world, me, nick, collected, focus, next, kinds
   // places as tappable name pins
   useEffect(() => {
     const m = map.current; if (!m) return;
-    const marks = PLACES.map((pl) => {
+    const marks = PLACES.filter((pl) => !only || only.has(pl.id)).map((pl) => {
       const el = document.createElement('button');
       el.className = `rm-pin${collected.has(pl.id) ? ' got' : ''}${next?.place.id === pl.id ? ' next' : ''}`;
       el.innerHTML = `<span class="rm-ico">${pl.icon}</span><span class="rm-name">${pl.short}</span>`;
-      el.setAttribute('aria-label', pl.name);
       el.onclick = (e) => { e.stopPropagation(); cb.current.onPick(pl); };
-      return new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([pl.lng, pl.lat]).addTo(m);
+      const mk = new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([pl.lng, pl.lat]).addTo(m);
+      el.setAttribute('aria-label', pl.name);
+      return mk;
     });
     return () => marks.forEach((x) => x.remove());
-  }, [collected, next?.place.id]);
+  }, [collected, next?.place.id, only]);
 
   useEffect(() => {
     const src = ready && (map.current?.getSource('pois') as GeoJSONSource | undefined);

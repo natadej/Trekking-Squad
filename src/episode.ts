@@ -10,6 +10,8 @@ export interface Episode {
   tz: string;
   /** an AWS event with classes and keynotes */
   event: boolean;
+  /** main arrival airport */
+  airport: string;
   center: { lat: number; lng: number };
   bounds: { north: number; south: number; west: number; east: number };
 }
@@ -17,12 +19,12 @@ export interface Episode {
 export const EPISODES: Record<EpisodeId, Episode> = {
   vegas: {
     id: 'vegas', name: 'RIV2026 at Vegas', city: 'Las Vegas', flag: '🎰', tagline: 'Walk the Strip during AWS re:Invent 2026.',
-    tz: 'America/Los_Angeles', event: true, center: { lat: 36.115, lng: -115.17 },
+    tz: 'America/Los_Angeles', event: true, airport: 'LAS', center: { lat: 36.115, lng: -115.17 },
     bounds: { north: 36.151, south: 36.079, west: -115.19, east: -115.142 },
   },
   bangkok: {
     id: 'bangkok', name: 'Bangkok Walkabout', city: 'Bangkok', flag: '🛕', tagline: 'Temples, markets, malls and riverside walks.',
-    tz: 'Asia/Bangkok', event: false, center: { lat: 13.737, lng: 100.515 },
+    tz: 'Asia/Bangkok', event: false, airport: 'BKK', center: { lat: 13.737, lng: 100.515 },
     bounds: { north: 13.76, south: 13.70, west: 100.485, east: 100.55 },
   },
 };

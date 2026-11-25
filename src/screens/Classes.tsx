@@ -51,7 +51,6 @@ export default function Classes({ p, sessions, planned, setPrefs, toggle, me, on
       .filter((s) => when === 'all' || (when === 'walkup' ? !!s.w : when === 'now' ? s.d === now.day && s.s <= now.min + 60 && s.e > now.min : s.d > now.day || (s.d === now.day && s.e > now.min)))
       .filter((s) => !words.length || words.every((w) => (s.c + ' ' + s.t + ' ' + s.sp.join(' ') + ' ' + s.tp.join(' ')).toLowerCase().includes(w)))
       .map((s) => ({ s, sc: scoreSession(s, prefs, p.trip.hotelId, p.learn) + (p.added.includes(s.c) ? 100 : 0) }))
-      .filter((x) => words.length || x.sc > 0 || where !== 'all' || when === 'now' || when === 'walkup')
       .sort((a, b) => sort === 'near' ? far(a.s) - far(b.s) || b.sc - a.sc
         : sort === 'soon' ? a.s.d.localeCompare(b.s.d) || a.s.s - b.s.s
           : b.sc - a.sc || a.s.d.localeCompare(b.s.d) || a.s.s - b.s.s);

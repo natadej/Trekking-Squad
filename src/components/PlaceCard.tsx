@@ -21,9 +21,11 @@ interface Props {
   onPoi: (p: Poi) => void;
   onCollect: () => void;
   onClose: () => void;
+  fav: boolean;
+  onFav: () => void;
 }
 
-export default function PlaceCard({ place: pl, p, addPlan, inside, collected, distance, canCollect, booked, onPoi, onCollect, onClose }: Props) {
+export default function PlaceCard({ place: pl, p, addPlan, inside, collected, distance, canCollect, booked, onPoi, onCollect, onClose, fav, onFav }: Props) {
   const info = placeInfo(pl.id), img = photoUrl(pl.id);
   const [tab, setTab] = useState<PoiKind | 'all'>('all');
   const [more, setMore] = useState(false);
@@ -36,6 +38,7 @@ export default function PlaceCard({ place: pl, p, addPlan, inside, collected, di
       <div className="sheet place-card" onClick={(e) => e.stopPropagation()}>
         <div className="pc-hero" style={img ? { backgroundImage: `url(${img})` } : { background: `linear-gradient(135deg, ${pl.color}, #4c1d95)` }}>
           <button className="x pc-x" aria-label="Close" onClick={onClose}>✕</button>
+          <button className={`pc-fav ${fav ? 'on' : ''}`} aria-pressed={fav} aria-label={fav ? 'Remove from favourites' : 'Add to favourites'} onClick={onFav}>{fav ? '★ Saved' : '☆ Save'}</button>
           {!img && <span className="pc-ico" aria-hidden>{pl.icon}</span>}
           <div className="pc-title">
             <span className="pc-kind">{KIND_LABEL[pl.kind]}</span>

@@ -209,3 +209,20 @@ export function splitFlights(flights: Flight[]): { arrive?: Flight; depart?: Fli
 }
 
 export const hotelName = (id?: string) => HOTELS.find((h) => h.id === id)?.name;
+
+/** Find a hotel from what the user typed: alias match first, then any word of the name. */
+export function findHotels(text: string) {
+  const q = text.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const hit = matchHotel(q);
+  const words = q.split(/\s+/).filter((w) => w.length > 2 && !['hotel', 'resort', 'casino', 'the', 'las', 'vegas'].includes(w));
+  return HOTELS.filter((h) => h.id === hit || words.some((w) => h.name.toLowerCase().includes(w)));
+}
+
+/** "ua 1234" / "UA1234" -> airline and number, or undefined if it doesn't look like a flight. */
+export function flightCode(text: string) {
+  const m = /^\s*([A-Z0-9]{2})\s*-?\s*(\d{1,4})\s*$/i.exec(text);
+  if (!m) return;
+  const code = m[1].toUpperCase();
+  return { code, airline: AIRLINES[code] ?? code, number: `${code} ${m[2]}` };
+}

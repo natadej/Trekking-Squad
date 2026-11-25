@@ -311,7 +311,7 @@ export default function App() {
         </div>
       )}
       {tab === 'map' && mapMode === 'shop' && <ShopScreen p={p} me={me} stepsToday={stepsToday} counting={counting} startSteps={startSteps} collectSpot={collectSpot} addPlan={addPlan} toggleWish={toggleWish} />}
-      {tab === 'map' && mapMode === 'strip' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} addPlan={addPlan} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} onShop={() => setMapMode('shop')} />}
+      {tab === 'map' && mapMode === 'strip' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} addPlan={addPlan} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} onShop={() => setMapMode('shop')} toggleFav={(id) => update((x) => { const f = x.fav ?? []; return { ...x, fav: f.includes(id) ? f.filter((y) => y !== id) : [...f, id] }; })} />}
       {tab === 'classes' && <Classes p={p} sessions={sessions} planned={new Set(plan.map((i) => i.code).filter(Boolean) as string[])}
         setPrefs={(f: (x: Prefs) => Prefs) => update((x) => ({ ...x, prefs: f(x.prefs) }))}
         me={me} onLearn={(s, w) => update((x) => ({ ...x, learn: learnFrom(x.learn, s, w) }))}
