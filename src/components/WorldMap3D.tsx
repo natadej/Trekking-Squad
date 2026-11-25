@@ -249,9 +249,9 @@ export default function WorldMap3D(props: Props) {
           const a = Math.atan2(-ay * h, ax * w), hw = w / 2 - 34, hh = h / 2 - 34;
           const k = Math.min(hw / Math.abs(Math.cos(a) || 1e-6), hh / Math.abs(Math.sin(a) || 1e-6));
           let px = w / 2 + Math.cos(a) * k, py = h / 2 + Math.sin(a) * k;
-          // keep clear of the mini-map in the top-right corner
           const mm = el.querySelector<HTMLElement>('.minimap');
-          if (mm && px > mm.offsetLeft - 26 && py < mm.offsetTop + mm.offsetHeight + 26) py = mm.offsetTop + mm.offsetHeight + 28;
+          // keep clear of the mini-map and map buttons down the right side
+          if (mm && px > mm.offsetLeft - 26) px = mm.offsetLeft - 30;
           ma.style.transform = `translate(${px}px, ${py}px) translate(-50%, -50%)`;
           (ma.firstElementChild as HTMLElement).style.transform = `rotate(${a}rad)`;
         }
