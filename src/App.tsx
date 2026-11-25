@@ -17,6 +17,7 @@ import Leaders from './screens/Leaders';
 import ImportSheet from './screens/ImportSheet';
 import ShopScreen from './screens/ShopScreen';
 import { startMotionSteps } from './steps';
+import { learnFrom } from './learn';
 import { walkReward } from './walks';
 import GoogleButton from './components/GoogleButton';
 import { STEP_M, type Area } from './data/shops';
@@ -313,7 +314,9 @@ export default function App() {
       {tab === 'map' && mapMode === 'strip' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} addPlan={addPlan} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} onShop={() => setMapMode('shop')} />}
       {tab === 'classes' && <Classes p={p} sessions={sessions} planned={new Set(plan.map((i) => i.code).filter(Boolean) as string[])}
         setPrefs={(f: (x: Prefs) => Prefs) => update((x) => ({ ...x, prefs: f(x.prefs) }))}
-        toggle={(c) => update((x) => (x.added.includes(c) ? { ...x, added: x.added.filter((y) => y !== c) } : { ...x, added: [...x.added, c], removed: x.removed.filter((y) => y !== c) }))} />}
+        me={me} onLearn={(s, w) => update((x) => ({ ...x, learn: learnFrom(x.learn, s, w) }))}
+        toggle={(c) => update((x) => { const s = sessions.find((y) => y.c === c); const on = x.added.includes(c); const learn = s ? learnFrom(x.learn, s, on ? -1 : 2) : x.learn;
+          return on ? { ...x, learn, added: x.added.filter((y) => y !== c) } : { ...x, learn, added: [...x.added, c], removed: x.removed.filter((y) => y !== c) }; })} />}
       {tab === 'hero' && <HeroStudio p={p} setAvatar={(a: Avatar) => update((x) => ({ ...x, avatar: a }))} setNick={(n) => update((x) => ({ ...x, nick: n }))}
         addInterest={(id) => { update((x) => ({ ...x, prefs: { ...x.prefs, interests: x.prefs.interests.includes(id) ? x.prefs.interests : [...x.prefs.interests, id] } })); say('⭐ Added. Class suggestions now include this topic.', true); }} account={account} />}
       {tab === 'top' && <Leaders p={p} rows={leaders} uid={user?.uid} live={!!user && leaders.length > 0} counting={counting} startSteps={startSteps} />}

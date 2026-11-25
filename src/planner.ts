@@ -3,6 +3,7 @@ import { BADGE, FIXED_EVENTS, SESSION_HOURS } from './data/agenda';
 import { HANDS_ON, INTERESTS, TALKS } from './data/interests';
 import { PLACES, distanceM, placeById, VENUE_PLACE, type Place } from './data/places';
 import { STEP_M } from './data/shops';
+import { learnScore, type Learn } from './learn';
 import { SPOTS, SPOT_ICON, SPOT_VERB, type Spot } from './data/spots';
 import { addDays, hm } from './time';
 
@@ -19,7 +20,7 @@ export function travelMin(a?: string, b?: string) {
   return d < 700 ? 20 : d < 1600 ? 30 : 45;
 }
 
-export function scoreSession(s: Session, prefs: Prefs, hotel?: string) {
+export function scoreSession(s: Session, prefs: Prefs, hotel?: string, learn?: Learn) {
   let sc = 0;
   for (const id of prefs.interests) {
     const it = INTERESTS.find((i) => i.id === id);
@@ -30,7 +31,9 @@ export function scoreSession(s: Session, prefs: Prefs, hotel?: string) {
     if (it.words?.test(s.t)) sc += 3;
     if (it.types?.includes(s.y)) sc += 4;
   }
-  if (sc === 0) return 0;
+  const ls = learnScore(learn, s);
+  if (sc === 0 && ls < 1) return 0;
+  sc += ls;
   if (prefs.style === 'hands' && HANDS_ON.has(s.y)) sc += 3;
   if (prefs.style === 'talks' && TALKS.has(s.y)) sc += 3;
   if (s.l) sc += Math.max(0, 2 - Math.abs(s.l - prefs.level) / 100);
@@ -180,7 +183,7 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
       let count = mine.length;
       const cands = sessions
         .filter((s) => s.d === day && s.s >= Math.max(hours[0], lo) && s.e <= Math.min(hours[1], hi) && !removed.has(s.c))
-        .map((s) => ({ s, sc: scoreSession(s, prefs, hotel) }))
+        .map((s) => ({ s, sc: scoreSession(s, prefs, hotel, p.learn) }))
         .filter((x) => x.sc > 0)
         .sort((a, b) => b.sc - a.sc || a.s.s - b.s.s);
       for (const { s } of cands) {

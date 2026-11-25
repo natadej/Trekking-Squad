@@ -544,3 +544,8 @@ h1 { font-size: 1.3rem; } h2 { font-size: 1.08rem; } h3 { font-size: 1rem; font-
 .rm-me span { position: absolute; top: 26px; left: 50%; transform: translateX(-50%); white-space: nowrap; font: 600 11px Inter, system-ui, sans-serif; background: rgba(17, 24, 39, .75); color: #fff; padding: 1px 7px; border-radius: 999px; }
 .maplibregl-ctrl-attrib { font-size: 10px; }
 .walk-why { margin: 0 0 6px; color: #4b5563; }
+.row-between { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.row-between h1 { margin: 0; }
+.filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.filters label { display: flex; flex-direction: column; gap: 2px; font-size: .75rem; font-weight: 600; color: #6b7280; }
+.filters select { font: inherit; font-size: .85rem; color: #1f2937; padding: 9px 6px; border: 1px solid #e4dcf2; border-radius: 10px; background: #fff; min-width: 0; }

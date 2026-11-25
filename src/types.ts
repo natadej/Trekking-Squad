@@ -108,6 +108,8 @@ export interface Profile {
   walks?: { id: string; day: string; steps: number }[];
   /** walk challenge in progress */
   walkNow?: Walk;
+  /** learned class taste: topic/area/type -> weight */
+  learn?: Record<string, number>;
   /** step goals chosen on the welcome screen */
   goalDay?: number;
   goalTrip?: number;
