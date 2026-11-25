@@ -259,7 +259,7 @@ export default function App() {
     const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'trekking-squad-riv2026-at-vegas.ics';
+    a.download = `trekking-squad-${EP.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.ics`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
     award('calendar');
