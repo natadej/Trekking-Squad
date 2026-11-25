@@ -97,7 +97,7 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
       badgeDone = true;
     }
     const ride = trip.pickup || 'uber';
-    const rideTitle = { uber: 'Uber/Lyft to your hotel', friend: 'Your ride picks you up', shuttle: 'Hotel shuttle', taxi: 'Taxi to your hotel' }[ride];
+    const rideTitle = { uber: `${EP.ride} to your hotel`, friend: 'Your ride picks you up', shuttle: 'Hotel shuttle', taxi: 'Taxi to your hotel' }[ride];
     add(ctx, { id: 'ride-in', day: arr.arrDate, start: t, end: t + 25, title: rideTitle, kind: 'ride', place: 'airport', note: placeById(hotel)?.name });
     t += 25;
     add(ctx, { id: 'checkin', day: arr.arrDate, start: t, end: t + 20, title: t < 15 * 60 ? 'Drop bags at hotel (room ready ~3 PM)' : 'Check in to your room', kind: 'hotel', place: hotel });
@@ -112,7 +112,7 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
   if (dep) {
     const leave = dep.depTime - 150;
     add(ctx, { id: 'checkout', day: dep.depDate, start: Math.min(leave - 30, 11 * 60), end: Math.min(leave - 15, 11 * 60 + 15), title: 'Check out (pack your swag!)', kind: 'hotel', place: hotel });
-    add(ctx, { id: 'ride-out', day: dep.depDate, start: leave, end: leave + 30, title: trip.dropoff === 'friend' ? 'Ride to the airport' : 'Uber/Lyft to the airport', kind: 'ride', place: hotel });
+    add(ctx, { id: 'ride-out', day: dep.depDate, start: leave, end: leave + 30, title: trip.dropoff === 'friend' ? 'Ride to the airport' : `${EP.ride} to the airport`, kind: 'ride', place: hotel });
     add(ctx, { id: 'depart', day: dep.depDate, start: dep.depTime - 120, end: dep.depTime, title: `Fly home: ${dep.airline} ${dep.number}`, kind: 'flight', place: 'airport', note: `Be at the gate 30 min early · ${EP.airport} → ${dep.to}` });
   }
 

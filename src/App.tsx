@@ -80,7 +80,7 @@ export default function App() {
     update((x) => (x.quests.includes(id) ? x : { ...x, quests: [...x.quests, id], points: x.points + questPoints(id) }));
   }, [update]);
 
-  const plan = useMemo(() => (sessions.length ? buildPlan(p, sessions) : []), [p, sessions]);
+  const plan = useMemo(() => (sessions.length || !EP.event ? buildPlan(p, sessions) : []), [p, sessions]);
   const ics = useMemo(() => toIcs(plan), [plan]);
 
   // cloud: sign-in, profile sync, live leaderboard
@@ -230,7 +230,7 @@ export default function App() {
   const answer = (id: string, f: (x: Profile) => Profile) => update((x) => f({ ...x, quests: [...x.quests, 'a:' + id] }));
   const hotel = placeById(p.trip.hotelId)?.short || 'your hotel';
   const questions: Question[] = [
-    p.trip.arrive && !answered('pickup') && { id: 'pickup', icon: '🚗', q: 'When you land, is someone picking you up?', yes: 'Yes, a ride!', no: `No, take Uber to ${hotel}`, onYes: () => answer('pickup', (x) => ({ ...x, trip: { ...x.trip, pickup: 'friend' } })), onNo: () => answer('pickup', (x) => ({ ...x, trip: { ...x.trip, pickup: 'uber' } })) },
+    p.trip.arrive && !answered('pickup') && { id: 'pickup', icon: '🚗', q: 'When you land, is someone picking you up?', yes: 'Yes, a ride!', no: `No, take ${EP.ride.split('/')[0]} to ${hotel}`, onYes: () => answer('pickup', (x) => ({ ...x, trip: { ...x.trip, pickup: 'friend' } })), onNo: () => answer('pickup', (x) => ({ ...x, trip: { ...x.trip, pickup: 'uber' } })) },
     p.trip.arrive && !answered('dinner') && { id: 'dinner', icon: '🍕', q: 'Want me to plan dinner the night you land?', onYes: () => answer('dinner', (x) => ({ ...x, trip: { ...x.trip, arrivalDinner: true } })), onNo: () => answer('dinner', (x) => ({ ...x, trip: { ...x.trip, arrivalDinner: false } })) },
     EP.event && !answered('parties') && { id: 'parties', icon: '🎉', q: 'Go to the fun parties, like re:Play at the stadium?', onYes: () => answer('parties', (x) => ({ ...x, prefs: { ...x.prefs, parties: true } })), onNo: () => answer('parties', (x) => ({ ...x, prefs: { ...x.prefs, parties: false } })) },
     !answered('pace') && { id: 'pace', icon: '⚡', q: 'Want a super busy plan with up to 6 classes a day?', yes: 'Yes, max!', no: 'No, 4 is plenty', onYes: () => answer('pace', (x) => ({ ...x, prefs: { ...x.prefs, pace: 'busy' } })), onNo: () => answer('pace', (x) => ({ ...x, prefs: { ...x.prefs, pace: 'chill' } })) },

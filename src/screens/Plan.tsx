@@ -1,3 +1,4 @@
+import { EP } from '../episode';
 import { useEffect, useState } from 'react';
 import { loadGsi } from '../cloud';
 import { calendarReady } from '../gcal';
@@ -70,8 +71,8 @@ export default function Plan({ p, plan, onRemove, onMaybe, onSync, onWalk, synci
                   <div className="row">
                     {i.kind === 'walk' && (p.walks?.some((d) => d.id === i.id) ? <span className="done-tag">✅ Walk done</span> : <button className="btn small gold" onClick={() => onWalk(i)}>▶️ Start walk</button>)}
                     {i.place && i.kind !== 'walk' && <a className="btn small" href={mapsLink(i.place)} target="_blank" rel="noreferrer">🧭 Go</a>}
-                    {i.kind === 'ride' && i.id === 'ride-in' && p.trip.pickup !== 'friend' && <a className="btn small" href={uberLink(p.trip.hotelId)} target="_blank" rel="noreferrer">🚗 Uber</a>}
-                    {i.kind === 'ride' && i.id === 'ride-out' && <a className="btn small" href={uberLink('airport')} target="_blank" rel="noreferrer">🚗 Uber</a>}
+                    {EP.uber && i.kind === 'ride' && i.id === 'ride-in' && p.trip.pickup !== 'friend' && <a className="btn small" href={uberLink(p.trip.hotelId)} target="_blank" rel="noreferrer">🚗 Uber</a>}
+                    {EP.uber && i.kind === 'ride' && i.id === 'ride-out' && <a className="btn small" href={uberLink('airport')} target="_blank" rel="noreferrer">🚗 Uber</a>}
                   </div>
                   {!['flight', 'ride'].includes(i.kind) && (
                     <div className="yn" role="group" aria-label={`Going to ${i.title}?`}>

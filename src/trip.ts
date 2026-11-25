@@ -1,5 +1,6 @@
 import type { Flight, Trip } from './types';
 import { HOTELS } from './data/places';
+import { EP } from './episode';
 
 const AIRLINES: Record<string, string> = {
   AA: 'American', UA: 'United', DL: 'Delta', WN: 'Southwest', AS: 'Alaska', B6: 'JetBlue', NK: 'Spirit', F9: 'Frontier',
@@ -111,7 +112,10 @@ const HOTEL_ALIASES: [RegExp, string][] = [
 ];
 
 export function matchHotel(text: string) {
-  return HOTEL_ALIASES.find(([re]) => re.test(text))?.[1];
+  const alias = EP.id === 'vegas' ? HOTEL_ALIASES.find(([re]) => re.test(text))?.[1] : undefined;
+  if (alias) return alias;
+  const t = text.toLowerCase();
+  return HOTELS.find((h) => t.includes(h.name.toLowerCase()) || t.includes(h.short.toLowerCase()))?.id;
 }
 
 export interface Parsed {
@@ -201,11 +205,12 @@ export function parseBooking(raw: string): Parsed {
   return out;
 }
 
-/** Which parsed flight goes to Vegas and which comes home. */
+/** Which parsed flight goes to the trip city and which comes home. */
 export function splitFlights(flights: Flight[]): { arrive?: Flight; depart?: Flight } {
-  const arrive = flights.find((f) => f.to === 'LAS') || flights.filter((f) => f.from !== 'LAS')[0];
-  const depart = [...flights].reverse().find((f) => f.from === 'LAS' && f !== arrive);
-  return { arrive: arrive && arrive.to === 'LAS' ? arrive : arrive?.to ? undefined : arrive, depart };
+  const here = (a?: string) => !!a && EP.airports.includes(a);
+  const arrive = flights.find((f) => here(f.to)) || flights.filter((f) => !here(f.from))[0];
+  const depart = [...flights].reverse().find((f) => here(f.from) && f !== arrive);
+  return { arrive: arrive && here(arrive.to) ? arrive : arrive?.to ? undefined : arrive, depart };
 }
 
 export const hotelName = (id?: string) => HOTELS.find((h) => h.id === id)?.name;
@@ -215,7 +220,7 @@ export function findHotels(text: string) {
   const q = text.trim().toLowerCase();
   if (q.length < 2) return [];
   const hit = matchHotel(q);
-  const words = q.split(/\s+/).filter((w) => w.length > 2 && !['hotel', 'resort', 'casino', 'the', 'las', 'vegas'].includes(w));
+  const words = q.split(/\s+/).filter((w) => w.length > 2 && !['hotel', 'resort', 'casino', 'the', ...EP.city.toLowerCase().split(/\s+/)].includes(w));
   return HOTELS.filter((h) => h.id === hit || words.some((w) => h.name.toLowerCase().includes(w)));
 }
 

@@ -135,7 +135,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn, me, on
           {leaveBy !== undefined && <p className="tip">🚶 Leave by <b>{hm(leaveBy)}</b> to get there on time.</p>}
           <div className="row">
             {mapsLink(next.place) && <a className="btn" href={mapsLink(next.place)} target="_blank" rel="noreferrer">🧭 Directions</a>}
-            {next.kind === 'ride' && <a className="btn" href={uberLink(t.hotelId)} target="_blank" rel="noreferrer">🚗 Open Uber</a>}
+            {EP.uber && next.kind === 'ride' && <a className="btn" href={uberLink(t.hotelId)} target="_blank" rel="noreferrer">🚗 Open Uber</a>}
             <button className="btn ghost" onClick={() => go('plan')}>See full plan</button>
           </div>
         </div>
