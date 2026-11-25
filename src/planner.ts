@@ -16,7 +16,7 @@ export function travelMin(a?: string, b?: string) {
   if (!a || !b || a === b) return a && b ? 10 : 0;
   const pa = placeById(a), pb = placeById(b);
   if (!pa || !pb) return 30;
-  if (pa.id === 'airport' || pb.id === 'airport') return 30;
+  if (pa.kind === 'airport' || pb.kind === 'airport') return 30;
   const d = distanceM(pa, pb);
   return d < 700 ? 20 : d < 1600 ? 30 : 45;
 }
@@ -87,9 +87,10 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
   // Arrival
   const arr = trip.arrive;
   if (arr) {
-    add(ctx, { id: 'arrive', day: arr.arrDate, start: arr.arrTime, end: arr.arrTime + 5, title: `Land in ${EP.city}! ${arr.airline} ${arr.number}`, kind: 'flight', place: 'airport', note: `${arr.from} → ${EP.airport}` });
+    const ap = airportAt(arr.to);
+    add(ctx, { id: 'arrive', day: arr.arrDate, start: arr.arrTime, end: arr.arrTime + 5, title: `Land in ${EP.city}! ${arr.airline} ${arr.number}`, kind: 'flight', place: ap, note: `${arr.from} → ${EP.airports.includes(arr.to) ? arr.to : EP.airport}` });
     let t = arr.arrTime + 30;
-    add(ctx, { id: 'bags', day: arr.arrDate, start: arr.arrTime + 5, end: t, title: 'Grab your bags', kind: 'free', place: 'airport' });
+    add(ctx, { id: 'bags', day: arr.arrDate, start: arr.arrTime + 5, end: t, title: 'Grab your bags', kind: 'free', place: ap });
     const desk = EP.event && BADGE.find((b) => b.day === arr.arrDate && b.place === 'airport' && t >= b.start && t + 20 <= b.end);
     if (desk) {
       add(ctx, { id: 'badge', day: arr.arrDate, start: t, end: t + 20, title: 'Pick up your re:Invent badge (T1/T3)', kind: 'badge', place: 'airport', note: 'Bring a government ID' });
@@ -98,7 +99,7 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
     }
     const ride = trip.pickup || 'uber';
     const rideTitle = { uber: `${EP.ride} to your hotel`, friend: 'Your ride picks you up', shuttle: 'Hotel shuttle', taxi: 'Taxi to your hotel' }[ride];
-    add(ctx, { id: 'ride-in', day: arr.arrDate, start: t, end: t + 25, title: rideTitle, kind: 'ride', place: 'airport', note: placeById(hotel)?.name });
+    add(ctx, { id: 'ride-in', day: arr.arrDate, start: t, end: t + 25, title: rideTitle, kind: 'ride', place: ap, note: placeById(hotel)?.name });
     t += 25;
     add(ctx, { id: 'checkin', day: arr.arrDate, start: t, end: t + 20, title: t < 15 * 60 ? 'Drop bags at hotel (room ready ~3 PM)' : 'Check in to your room', kind: 'hotel', place: hotel });
     if (trip.arrivalDinner !== false && t + 20 < 21 * 60) {
@@ -113,7 +114,7 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
     const leave = dep.depTime - 150;
     add(ctx, { id: 'checkout', day: dep.depDate, start: Math.min(leave - 30, 11 * 60), end: Math.min(leave - 15, 11 * 60 + 15), title: 'Check out (pack your swag!)', kind: 'hotel', place: hotel });
     add(ctx, { id: 'ride-out', day: dep.depDate, start: leave, end: leave + 30, title: trip.dropoff === 'friend' ? 'Ride to the airport' : `${EP.ride} to the airport`, kind: 'ride', place: hotel });
-    add(ctx, { id: 'depart', day: dep.depDate, start: dep.depTime - 120, end: dep.depTime, title: `Fly home: ${dep.airline} ${dep.number}`, kind: 'flight', place: 'airport', note: `Be at the gate 30 min early · ${EP.airport} → ${dep.to}` });
+    add(ctx, { id: 'depart', day: dep.depDate, start: dep.depTime - 120, end: dep.depTime, title: `Fly home: ${dep.airline} ${dep.number}`, kind: 'flight', place: airportAt(dep.from), note: `Be at the gate 30 min early · ${EP.airports.includes(dep.from) ? dep.from : EP.airport} → ${dep.to}` });
   }
 
   const usable = (day: string) => {
@@ -292,3 +293,5 @@ export function travelBetween(items: PlanItem[]) {
 }
 
 export const describe = (i: PlanItem) => `${hm(i.start)}–${hm(i.end)} ${i.title}`;
+
+export const airportAt = (code?: string) => PLACES.find((x) => x.kind === 'airport' && !!code && x.name.includes(`(${code})`))?.id ?? 'airport';

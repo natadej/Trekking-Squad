@@ -4,6 +4,8 @@ import type { Place } from './places';
 export const BANGKOK_PLACES: Place[] = [
   { id: 'airport', name: 'Suvarnabhumi Airport (BKK)', short: 'Airport', kind: 'airport', lat: 13.69, lng: 100.7501, icon: '✈️', color: '#7dd3fc', coins: 50,
     fact: 'Take the Airport Rail Link to Phaya Thai (about 30 min), or a taxi from the public taxi stand on level 1.' },
+  { id: 'dmk', name: 'Don Mueang Airport (DMK)', short: 'Don Mueang', kind: 'airport', lat: 13.9126, lng: 100.6067, icon: '✈️', color: '#7dd3fc', coins: 50,
+    fact: 'Bangkok\'s older airport, now the hub for low-cost airlines. The SRT Dark Red Line stops at Don Mueang station.' },
   { id: 'mandarin', name: 'Mandarin Oriental, Bangkok', short: 'Mandarin Oriental', kind: 'hotel', lat: 13.7236, lng: 100.5141, icon: '🏨', color: '#f5c542', coins: 100,
     fact: 'Riverside hotel open since 1876. Its own boat crosses the Chao Phraya River.' },
   { id: 'peninsula', name: 'The Peninsula Bangkok', short: 'Peninsula', kind: 'hotel', lat: 13.7229, lng: 100.511, icon: '🏨', color: '#a78bfa', coins: 100,

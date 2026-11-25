@@ -57,7 +57,7 @@ function WalkCard({ p, plan, me, onWalk, onStopWalk }: Pick<Props, 'p' | 'plan' 
     );
   }
   const planned = plan.find((i) => i.kind === 'walk' && !i.tentative && i.day === now.day && i.end > now.min && i.start - 30 <= now.min && !done.some((d) => d.id === i.id));
-  const from = me && PLACES.some((x) => distanceM(me, x) < 400) ? PLACES.filter((x) => x.id !== 'airport').sort((a, b) => distanceM(me, a) - distanceM(me, b))[0] : placeById(p.trip.hotelId) ?? placeById(EP.defaultHotel)!;
+  const from = me && PLACES.some((x) => distanceM(me, x) < 400) ? PLACES.filter((x) => x.kind !== 'airport').sort((a, b) => distanceM(me, a) - distanceM(me, b))[0] : placeById(p.trip.hotelId) ?? placeById(EP.defaultHotel)!;
   const goal = GOALS[pick % 3], quick = walkTo(from, goal, Math.floor(pick / 3));
   const offer = planned ? { id: planned.id, title: planned.title, steps: planned.steps ?? goal, place: planned.place, why: planned.note?.split(' ~')[0] } : quick && { id: `quick-${now.day}-${now.min}`, title: `${quick.to.icon} ${quick.title}`, steps: quick.steps, place: from.id, why: quick.to.why };
   if (!offer) return null;
