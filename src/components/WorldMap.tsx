@@ -35,6 +35,9 @@ export default function WorldMap({ world, me, avatar, nick, collected, focus, ne
   const drag = useRef<{ x: number; y: number; c: LL; moved: boolean } | null>(null);
   const last = useRef<LL | null>(null);
   const [walkHdg, setWalkHdg] = useState<number>();
+  const [rot, setRot] = useState(0); // map turn in degrees; 0 = north up
+  const touch = useRef(new Map<number, { x: number; y: number }>());
+  const twist = useRef<{ a: number; d: number; r: number; zi: number } | null>(null);
   const z = ZOOMS[zi];
 
   useEffect(() => {
@@ -47,7 +50,15 @@ export default function WorldMap({ world, me, avatar, nick, collected, focus, ne
 
   // follow the hero (or the hotel when there is no GPS) until the player drags the map
   const target = me ?? focus;
-  useEffect(() => { if (follow) setCenter({ lat: target.lat, lng: target.lng }); }, [follow, target.lat, target.lng]);
+  // calm follow: the map only moves when the hero walks out of the middle of the screen
+  useEffect(() => {
+    if (!follow) return;
+    setCenter((c) => {
+      const m = toM(c, target.lat, target.lng), zone = (Math.min(size.w, size.h) * 0.22) / z;
+      return Math.hypot(m.x, m.y) > zone || !me ? { lat: target.lat, lng: target.lng } : c;
+    });
+  }, [follow, target.lat, target.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  const backToMe = () => { setFollow(true); setCenter({ lat: target.lat, lng: target.lng }); };
 
   // heading: the phone compass/GPS course if it has one, else the way you walked, else toward the next stop
   useEffect(() => {
@@ -60,22 +71,41 @@ export default function WorldMap({ world, me, avatar, nick, collected, focus, ne
   }, [me]);
   const hdg = me?.hdg != null && !Number.isNaN(me.hdg) ? me.hdg : walkHdg ?? (me && next ? bearing(me, next.place) : undefined);
 
-  const P = (lat: number, lng: number) => { const m = toM(center, lat, lng); return { x: m.x * z, y: m.y * z }; };
+  const rc = Math.cos((rot * Math.PI) / 180), rs = Math.sin((rot * Math.PI) / 180);
+  const P = (lat: number, lng: number) => { const m = toM(center, lat, lng); return { x: (m.x * rc - m.y * rs) * z, y: (m.x * rs + m.y * rc) * z }; };
   const pts = (r: [number, number][]) => r.map(([a, b]) => { const p = P(a, b); return `${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(' ');
   const inView = (x: number, y: number, pad = 40) => Math.abs(x) < size.w / 2 + pad && Math.abs(y) < size.h / 2 + pad;
 
-  const onDown = (e: React.PointerEvent) => { drag.current = { x: e.clientX, y: e.clientY, c: center, moved: false }; };
+  const two = () => { const [a, b] = [...touch.current.values()]; return { a: (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI, d: Math.hypot(b.x - a.x, b.y - a.y) }; };
+  const onDown = (e: React.PointerEvent) => {
+    touch.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (touch.current.size === 2) { const t = two(); twist.current = { a: t.a, d: t.d, r: rot, zi }; if (drag.current) drag.current.moved = true; return; }
+    drag.current = { x: e.clientX, y: e.clientY, c: center, moved: false };
+  };
   const onMove = (e: React.PointerEvent) => {
+    if (touch.current.has(e.pointerId)) touch.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (twist.current && touch.current.size === 2) {
+      const t = two(), s0 = twist.current, step = Math.round(Math.log(t.d / s0.d) / Math.log(1.6));
+      setRot((((s0.r + t.a - s0.a) % 360) + 360) % 360);
+      setZi(Math.max(0, Math.min(ZOOMS.length - 1, s0.zi + step)));
+      return;
+    }
     const d = drag.current;
-    if (!d) return;
+    if (!d || twist.current) return;
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (!d.moved && Math.hypot(dx, dy) < 6) return;
     if (!d.moved) (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     d.moved = true;
     setFollow(false);
-    setCenter(fromM(d.c, -dx / z, -dy / z));
+    // screen drag -> map metres, undoing the map turn
+    const mx = (dx * rc + dy * rs) / z, my = (-dx * rs + dy * rc) / z;
+    setCenter(fromM(d.c, -mx, -my));
   };
-  const onUp = () => { setTimeout(() => { drag.current = null; }, 0); };
+  const onUp = (e: React.PointerEvent) => {
+    touch.current.delete(e.pointerId);
+    if (touch.current.size < 2) twist.current = null;
+    setTimeout(() => { if (!touch.current.size) drag.current = null; }, 0);
+  };
   const tap = (fn: () => void) => () => { if (!drag.current?.moved) fn(); };
 
   // POIs on screen, with labels that never overlap
@@ -103,6 +133,12 @@ export default function WorldMap({ world, me, avatar, nick, collected, focus, ne
     return { x: Math.cos(a) * k, y: Math.sin(a) * k, deg: (a * 180) / Math.PI };
   })() : null;
   const from = me ?? center;
+  const meOff = mePt && !inView(mePt.x, mePt.y, -30);
+  const meEdge = mePt && meOff ? (() => {
+    const a = Math.atan2(mePt.y, mePt.x), hw = size.w / 2 - 30, hh = size.h / 2 - 30;
+    const k = Math.min(hw / Math.abs(Math.cos(a) || 1e-6), hh / Math.abs(Math.sin(a) || 1e-6));
+    return { x: Math.cos(a) * k, y: Math.sin(a) * k, deg: (a * 180) / Math.PI };
+  })() : null;
 
   return (
     <div className="map-wrap">
@@ -166,20 +202,30 @@ export default function WorldMap({ world, me, avatar, nick, collected, focus, ne
 
           {mePt && (
             <g transform={`translate(${mePt.x} ${mePt.y})`} className="me">
-              {hdg !== undefined && <path transform={`rotate(${hdg})`} d="M0 -34 L9 -20 L-9 -20 Z" fill="#f6c445" stroke="#5a4030" strokeWidth="2" />}
+              {hdg !== undefined && <path transform={`rotate(${hdg + rot})`} d="M0 -34 L9 -20 L-9 -20 Z" fill="#f6c445" stroke="#5a4030" strokeWidth="2" />}
               <ellipse cx="0" cy="10" rx="12" ry="4" fill="rgba(44,36,56,.3)" />
               <foreignObject x="-18" y="-36" width="36" height="48"><Hero a={avatar} size={60} /></foreignObject>
               {nick && <text y="26" textAnchor="middle" className="me-name">{nick}</text>}
             </g>
           )}
+          {meEdge && (
+            <g transform={`translate(${meEdge.x} ${meEdge.y})`} className="me-edge-svg" role="button" aria-label="Go back to me" onClick={tap(backToMe)}>
+              <circle r="20" fill="#e2604e" stroke="#fff" strokeWidth="3" />
+              <path transform={`rotate(${meEdge.deg})`} d="M-7 -8 L10 0 L-7 8 L-3 0 Z" fill="#fff" />
+            </g>
+          )}
         </svg>
 
-        <MiniMap center={center} me={me} hdg={hdg} next={next?.place} view={{ w: size.w / z, h: size.h / z }} onJump={(c) => { setFollow(false); setCenter(c); }} />
+        {!follow && <button className="back-me" onPointerDown={(e) => e.stopPropagation()} onClick={backToMe}>📍 {me ? 'Back to me' : 'Back to my hotel'}</button>}
+
+        <MiniMap rot={rot} center={center} me={me} hdg={hdg} next={next?.place} view={{ w: size.w / z, h: size.h / z }} onJump={(c) => { setFollow(false); setCenter(c); }} />
 
         <div className="map-zoom" onPointerDown={(e) => e.stopPropagation()}>
           <button onClick={() => setZi((i) => Math.min(ZOOMS.length - 1, i + 1))} aria-label="Zoom in">＋</button>
           <button onClick={() => setZi((i) => Math.max(0, i - 1))} aria-label="Zoom out">－</button>
-          <button className={follow ? 'on' : ''} aria-pressed={follow} onClick={() => setFollow(true)} aria-label={me ? 'Follow my hero' : 'Back to my hotel'}>🎯</button>
+          <button onClick={() => setRot((r) => (r + 315) % 360)} aria-label="Turn left">⟲</button>
+          <button onClick={() => setRot((r) => (r + 45) % 360)} aria-label="Turn right">⟳</button>
+          <button onClick={() => setRot(0)} aria-label="Turn north up"><span className="needle" style={{ transform: `rotate(${rot}deg)` }}>🧭</span></button>
         </div>
 
         {next && (
@@ -199,16 +245,18 @@ const mp = (lat: number, lng: number) => ({ x: ((lng - BOUNDS.west) / (BOUNDS.ea
 const mroad = STRIP_ROAD.map(([a, b]) => mp(a, b)).map((p) => `${p.x},${p.y}`).join(' ');
 const PERM = MW / ((BOUNDS.east - BOUNDS.west) * 111320 * MK); // mini-map px per metre
 
-export function MiniMap({ center, me, hdg, next, view, onJump }: { center: LL; me?: LL | null; hdg?: number; next?: Place; view: { w: number; h: number }; onJump: (c: LL) => void }) {
+export function MiniMap({ rot = 0, center, me, hdg, next, view, onJump }: { rot?: number; center: LL; me?: LL | null; hdg?: number; next?: Place; view: { w: number; h: number }; onJump: (c: LL) => void }) {
   const c = mp(center.lat, center.lng), m = me ? mp(me.lat, me.lng) : null, n = next ? mp(next.lat, next.lng) : null;
   const jump = (e: React.MouseEvent<SVGSVGElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width) * MW, y = ((e.clientY - r.top) / r.height) * MH;
+    // undo the mini-map turn to find the tapped spot
+    const r = e.currentTarget.getBoundingClientRect(), a = (-rot * Math.PI) / 180;
+    const sx = e.clientX - (r.left + r.width / 2), sy = e.clientY - (r.top + r.height / 2), sc = MW / (e.currentTarget as SVGSVGElement).clientWidth;
+    const x = MW / 2 + (sx * Math.cos(a) - sy * Math.sin(a)) * sc, y = MH / 2 + (sx * Math.sin(a) + sy * Math.cos(a)) * sc;
     onJump({ lat: BOUNDS.north - (y / MH) * (BOUNDS.north - BOUNDS.south), lng: BOUNDS.west + (x / MW) * (BOUNDS.east - BOUNDS.west) });
   };
   return (
     <div className="minimap" onPointerDown={(e) => e.stopPropagation()}>
-      <svg viewBox={`0 0 ${MW} ${MH}`} width={MW} height={MH} onClick={jump} role="img" aria-label="Mini-map of the whole Strip. Tap to jump there.">
+      <svg viewBox={`0 0 ${MW} ${MH}`} width={MW} height={MH} onClick={jump} style={{ transform: `rotate(${rot}deg)` }} role="img" aria-label="Mini-map of the whole Strip. Tap to jump there.">
         <rect width={MW} height={MH} fill="#ecd9a8" />
         <polyline points={mroad} fill="none" stroke="#a89a86" strokeWidth="4" strokeLinejoin="round" />
         {PLACES.map((p) => { const q = mp(p.lat, p.lng); return <rect key={p.id} x={q.x - 2.5} y={q.y - 2.5} width="5" height="5" fill={p.color} stroke="#5a4030" strokeWidth="1" />; })}
@@ -218,7 +266,7 @@ export function MiniMap({ center, me, hdg, next, view, onJump }: { center: LL; m
           {hdg !== undefined && <path transform={`rotate(${hdg})`} d="M0 -9 L4 -2 L-4 -2 Z" fill="#f6c445" stroke="#5a4030" strokeWidth="1" />}
           <circle r="3.5" fill="#e2604e" stroke="#fff" strokeWidth="1.5" />
         </g>}
-        <text x={MW - 8} y="12" textAnchor="middle" className="mini-n">N</text>
+        <text x={MW - 8} y="12" textAnchor="middle" className="mini-n" transform={`rotate(${-rot} ${MW - 8} 8)`}>N</text>
       </svg>
       <small>{hdg !== undefined ? `Heading ${compass(hdg)}` : 'Whole Strip'}</small>
     </div>

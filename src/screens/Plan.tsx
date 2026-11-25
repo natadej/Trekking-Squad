@@ -13,6 +13,7 @@ interface Props {
   onRemove: (i: PlanItem) => void;
   onMaybe: (i: PlanItem, maybe: boolean) => void;
   onSync: () => void;
+  onWalk: (i: PlanItem) => void;
   syncing: boolean;
   onAdd: (i: PlanItem) => void;
   onCalendar: () => void;
@@ -21,7 +22,7 @@ interface Props {
 
 const toMin = (v: string) => { const [h, m] = v.split(':').map(Number); return h * 60 + m; };
 
-export default function Plan({ p, plan, onRemove, onMaybe, onSync, syncing, onAdd, onCalendar, onReset }: Props) {
+export default function Plan({ p, plan, onRemove, onMaybe, onSync, onWalk, syncing, onAdd, onCalendar, onReset }: Props) {
   const days = tripDays(p.trip);
   const [day, setDay] = useState(() => days.find((d) => plan.some((i) => i.day === d)) || days[0]);
   const [adding, setAdding] = useState(false);
@@ -67,7 +68,8 @@ export default function Plan({ p, plan, onRemove, onMaybe, onSync, syncing, onAd
                   <div className="ttl">{i.title}</div>
                   <div className="meta">{[placeName(i), i.note].filter(Boolean).join(' · ')}</div>
                   <div className="row">
-                    {i.place && <a className="btn small" href={mapsLink(i.place)} target="_blank" rel="noreferrer">🧭 Go</a>}
+                    {i.kind === 'walk' && <button className="btn small gold" onClick={() => onWalk(i)}>▶️ Start walk</button>}
+                    {i.place && i.kind !== 'walk' && <a className="btn small" href={mapsLink(i.place)} target="_blank" rel="noreferrer">🧭 Go</a>}
                     {i.kind === 'ride' && i.id === 'ride-in' && p.trip.pickup !== 'friend' && <a className="btn small" href={uberLink(p.trip.hotelId)} target="_blank" rel="noreferrer">🚗 Uber</a>}
                     {i.kind === 'ride' && i.id === 'ride-out' && <a className="btn small" href={uberLink('airport')} target="_blank" rel="noreferrer">🚗 Uber</a>}
                   </div>

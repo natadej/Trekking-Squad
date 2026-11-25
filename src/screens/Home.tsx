@@ -7,6 +7,10 @@ import { KIND, YesNo, mapsLink, placeName, uberLink } from '../ui';
 import { hotelName } from '../trip';
 import { travelMin } from '../planner';
 import { contestAvg, goalsOf, trophyOf } from '../trophy';
+import { useState } from 'react';
+import { placeById, PLACES, distanceM } from '../data/places';
+import { walkTo } from '../planner';
+import { CHEST_EVERY, badgesOf, streakOf } from '../walks';
 
 const TIPS = [
   '💧 Drink a glass of water every hour. The desert air is very dry.',
@@ -25,9 +29,52 @@ interface Props {
   onImport: () => void;
   go: (tab: string) => void;
   checkIn?: { item: PlanItem; claim: () => void };
+  me?: { lat: number; lng: number } | null;
+  onWalk: (w: { id: string; title: string; steps: number; place?: string }) => void;
+  onStopWalk: () => void;
 }
 
-export default function Home({ p, plan, questions, onImport, go, checkIn }: Props) {
+const GOALS = [1000, 2000, 3000];
+
+function WalkCard({ p, plan, me, onWalk, onStopWalk }: Pick<Props, 'p' | 'plan' | 'me' | 'onWalk' | 'onStopWalk'>) {
+  const now = nowPT();
+  const [pick, setPick] = useState(0);
+  const done = p.walks ?? [], streak = streakOf(done, now.day), left = CHEST_EVERY - (done.length % CHEST_EVERY), badges = badgesOf(done);
+  const w = p.walkNow, st = p.steps?.[now.day] ?? 0;
+  const stats = <p className="walk-stats">🔥 <b>{streak}</b>-day streak · 🎁 {left} walk{left > 1 ? 's' : ''} to the next chest{badges.length ? <> · {badges.map((b) => <span key={b.n} title={b.name}>{b.icon}</span>)}</> : null}</p>;
+  if (w) {
+    const got = Math.max(0, st - w.base), pct = Math.min(100, (got / w.goal) * 100);
+    return (
+      <div className="card walk on pop">
+        <p className="label">🚶 Walk in progress</p>
+        <h2>{w.title}</h2>
+        <div className="walk-bar" aria-label={`${got} of ${w.goal} steps`}><i style={{ width: `${pct}%` }} /></div>
+        <p><b>{got.toLocaleString()}</b> of {w.goal.toLocaleString()} steps · {Math.max(0, w.goal - got).toLocaleString()} to go</p>
+        {stats}
+        <button className="btn ghost small" onClick={onStopWalk}>Stop this walk</button>
+      </div>
+    );
+  }
+  const planned = plan.find((i) => i.kind === 'walk' && !i.tentative && i.day === now.day && i.end > now.min && i.start - 30 <= now.min && !done.some((d) => d.id === i.id));
+  const from = me && PLACES.some((x) => distanceM(me, x) < 400) ? PLACES.filter((x) => x.id !== 'airport').sort((a, b) => distanceM(me, a) - distanceM(me, b))[0] : placeById(p.trip.hotelId) ?? placeById('venetian')!;
+  const goal = GOALS[pick % 3], quick = walkTo(from, goal, Math.floor(pick / 3));
+  const offer = planned ? { id: planned.id, title: planned.title, steps: planned.steps ?? goal, place: planned.place } : quick && { id: `quick-${now.day}-${now.min}`, title: `Walk from ${from.short} to ${quick.to.short} and back`, steps: quick.steps, place: from.id };
+  if (!offer) return null;
+  return (
+    <div className="card walk pop">
+      <p className="label">{planned ? '🚶 Walk challenge in your free time' : '🚶 Quick walk challenge'}</p>
+      <h2>{offer.title}</h2>
+      <p>About <b>{offer.steps.toLocaleString()} steps</b> · {Math.ceil(offer.steps / 100)} min · reward <b>+{Math.round(offer.steps / 10)} points</b></p>
+      {stats}
+      <div className="row">
+        <button className="btn gold big" onClick={() => onWalk(offer)}>▶️ Start walk</button>
+        {!planned && <button className="btn ghost" onClick={() => setPick(pick + 1)}>🔀 Another walk</button>}
+      </div>
+    </div>
+  );
+}
+
+export default function Home({ p, plan, questions, onImport, go, checkIn, me, onWalk, onStopWalk }: Props) {
   const now = nowPT();
   const upcoming = plan.filter((i) => i.day > now.day || (i.day === now.day && i.end > now.min));
   const next = upcoming[0];
@@ -67,6 +114,8 @@ export default function Home({ p, plan, questions, onImport, go, checkIn }: Prop
         <button onClick={() => go('top')} className="q-top"><span>🏆</span>Leaders</button>
         <button onClick={onImport} className="q-mail"><span>📩</span>Add booking</button>
       </div>
+
+      <WalkCard p={p} plan={plan} me={me} onWalk={onWalk} onStopWalk={onStopWalk} />
 
       {checkIn && (
         <div className="card checkin pop">

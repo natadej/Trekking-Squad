@@ -12,6 +12,7 @@ export const KIND: Record<ItemKind, { icon: string; label: string; cls: string }
   badge: { icon: '🪪', label: 'Badge', cls: 'k-badge' },
   free: { icon: '😌', label: 'Free time', cls: 'k-free' },
   custom: { icon: '📌', label: 'My plan', cls: 'k-custom' },
+  walk: { icon: '🚶', label: 'Walk challenge', cls: 'k-walk' },
 };
 
 export function mapsLink(placeId?: string, mode: 'walking' | 'driving' = 'walking') {

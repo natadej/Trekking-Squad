@@ -25,7 +25,7 @@ interface Props {
   onPoi: (p: Poi) => void;
 }
 type Light = 'auto' | 'day' | 'night';
-const FOV = 50, PITCH_MIN = 0.35, PITCH_MAX = 1.5, WALK = 28, MAX_D = 70000;
+const FOV = 50, PITCH_MIN = 0.35, PITCH_MAX = 1.5, WALK = 28, MAX_D = 10000;
 const vegasHour = () => Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
 const isNight = (l: Light) => (l === 'auto' ? vegasHour() >= 17 || vegasHour() < 7 : l === 'night');
 /** Nearest Strip sidewalk to a point, so the character starts outside, not inside a hotel. */
@@ -47,8 +47,11 @@ export default function WorldMap3D(props: Props) {
   const tagEl = useRef<HTMLDivElement>(null);
   const labelEls = useRef<Record<string, HTMLButtonElement | null>>({});
   const poiEls = useRef<Record<string, HTMLButtonElement | null>>({});
-  const cam = useRef({ yaw: 0, pitch: 0.85, dist: 260, target: me ? v3(me) : curb(focus), follow: true, pos: me ? v3(me) : curb(focus), face: Math.PI });
+  const cam = useRef({ yaw: 0, pitch: 0.85, dist: 260, target: me ? v3(me) : curb(focus), follow: true, glide: false, pos: me ? v3(me) : curb(focus), face: Math.PI });
   const [follow, setFollow] = useState(true);
+  const [rot, setRot] = useState(0);
+  const [alt, setAlt] = useState(0);
+  const meArrow = useRef<HTMLButtonElement>(null);
   const [pois, setPois] = useState<Poi[]>([]);
   const [view, setView] = useState({ c: me ?? focus, hero: me ?? focus, w: 600, h: 600 });
   const [failed, setFailed] = useState(false);
@@ -97,15 +100,31 @@ export default function WorldMap3D(props: Props) {
     const pillar = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 600, 24, 1, true), new THREE.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: 0.22, depthWrite: false })); scene.add(pillar);
     const ring = new THREE.Mesh(new THREE.RingGeometry(4.5, 6, 40), new THREE.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: 0.9 })); ring.rotation.x = -Math.PI / 2; scene.add(ring);
 
+    const applyCam = () => {
+      const far = THREE.MathUtils.smoothstep(C.dist, 2500, MAX_D), pitch = C.pitch + (1.25 - C.pitch) * far * 0.6, cp = Math.cos(pitch) * C.dist;
+      camera.position.set(C.target.x + Math.sin(C.yaw) * cp, Math.max(4, Math.sin(pitch) * C.dist), C.target.z + Math.cos(C.yaw) * cp);
+      camera.lookAt(C.target.x, C.target.y + 6, C.target.z); camera.updateMatrixWorld();
+    };
+    const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), gray = new THREE.Raycaster();
+    const groundAt = (x: number, y: number) => {
+      const r = el.getBoundingClientRect();
+      gray.setFromCamera(new THREE.Vector2(((x - r.left) / w) * 2 - 1, -((y - r.top) / h) * 2 + 1), camera);
+      return gray.ray.intersectPlane(ground, new THREE.Vector3());
+    };
+    /** zoom and turn around the point under the fingers, so the map never jumps to another spot */
+    const around = (x: number, y: number, f: () => void) => {
+      applyCam(); const a = groundAt(x, y); f(); applyCam(); const b = groundAt(x, y);
+      if (a && b) { C.target.x += a.x - b.x; C.target.z += a.z - b.z; }
+    };
     let w = 1, h = 1;
     const ro = new ResizeObserver(() => { w = el.clientWidth; h = el.clientHeight; renderer.setSize(w, h); composer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); });
     ro.observe(el);
 
     // drag pans, two fingers pinch-zoom + twist + tilt, tap opens a building
     const pts = new Map<number, { x: number; y: number }>();
-    let start: { x: number; y: number; moved: boolean } | null = null, pinch: { d: number; a: number; my: number } | null = null;
+    let start: { x: number; y: number; moved: boolean } | null = null, pinch: { d: number; a: number; my: number; mx: number } | null = null;
     const C = cam.current;
-    const unfollow = () => { if (C.follow) { C.follow = false; setFollow(false); } };
+    const unfollow = () => { C.glide = false; if (C.follow) { C.follow = false; setFollow(false); } };
     const pan = (dx: number, dy: number) => {
       const k = (2 * C.dist * Math.tan((FOV * Math.PI) / 360)) / h;
       const right = new THREE.Vector3(Math.cos(C.yaw), 0, -Math.sin(C.yaw)), fwd = new THREE.Vector3(-Math.sin(C.yaw), 0, -Math.cos(C.yaw));
@@ -113,14 +132,15 @@ export default function WorldMap3D(props: Props) {
       C.target.x = THREE.MathUtils.clamp(C.target.x, -40000, 40000); C.target.z = THREE.MathUtils.clamp(C.target.z, -40000, 40000);
       unfollow();
     };
-    const two = () => { const [a, b] = [...pts.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y), a: Math.atan2(b.y - a.y, b.x - a.x), my: (a.y + b.y) / 2 }; };
+    const two = () => { const [a, b] = [...pts.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y), a: Math.atan2(b.y - a.y, b.x - a.x), my: (a.y + b.y) / 2, mx: (a.x + b.x) / 2 }; };
     const down = (e: PointerEvent) => { if (e.target !== renderer.domElement) return; el.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pts.size === 1) start = { x: e.clientX, y: e.clientY, moved: false }; else { pinch = two(); if (start) start.moved = true; } };
     const move = (e: PointerEvent) => {
       const p = pts.get(e.pointerId); if (!p) return;
       const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
       if (pts.size >= 2 && pinch) {
-        const n = two();
-        C.dist = THREE.MathUtils.clamp(C.dist * (pinch.d / n.d), 40, MAX_D); C.yaw -= n.a - pinch.a;
+        const n = two(), pd = pinch.d, pa = pinch.a;
+        unfollow();
+        around(n.mx, n.my, () => { C.dist = THREE.MathUtils.clamp(C.dist * (pd / n.d), 40, MAX_D); C.yaw -= n.a - pa; });
         C.pitch = THREE.MathUtils.clamp(C.pitch + (n.my - pinch.my) * 0.004, PITCH_MIN, PITCH_MAX); pinch = n; return;
       }
       if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 6) start.moved = true;
@@ -138,7 +158,7 @@ export default function WorldMap3D(props: Props) {
       }
       if (pts.size === 0) start = null;
     };
-    const wheel = (e: WheelEvent) => { e.preventDefault(); C.dist = THREE.MathUtils.clamp(C.dist * (e.deltaY > 0 ? 1.12 : 0.89), 40, MAX_D); };
+    const wheel = (e: WheelEvent) => { e.preventDefault(); unfollow(); around(e.clientX, e.clientY, () => { C.dist = THREE.MathUtils.clamp(C.dist * (e.deltaY > 0 ? 1.12 : 0.89), 40, MAX_D); }); };
     const ctx = (e: Event) => e.preventDefault();
     el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
     el.addEventListener('wheel', wheel, { passive: false }); el.addEventListener('contextmenu', ctx);
@@ -173,9 +193,9 @@ export default function WorldMap3D(props: Props) {
     let ctrl: R[] = [];
     const readCtrl = () => {
       const o = el.getBoundingClientRect();
-      ctrl = [...el.querySelectorAll('.minimap, .wmini, .gps-only, .map-zoom, .m3-toggle, .next-hint')].map((n) => { const r = n.getBoundingClientRect(); return { l: r.left - o.left, r: r.right - o.left, t: r.top - o.top, b: r.bottom - o.top }; });
+      ctrl = [...el.querySelectorAll('.minimap, .wmini, .gps-only, .map-zoom, .m3-toggle, .next-hint, .back-me, .alt-chip')].map((n) => { const r = n.getBoundingClientRect(); return { l: r.left - o.left, r: r.right - o.left, t: r.top - o.top, b: r.bottom - o.top }; });
     };
-    const last = { t: performance.now(), poi: 0, key: '' };
+    const last = { t: performance.now(), poi: 0, key: '', rot: 0 };
     let raf = 0;
     const loop = (t: number) => {
       raf = requestAnimationFrame(loop);
@@ -194,15 +214,20 @@ export default function WorldMap3D(props: Props) {
       hero.g.position.x = C.pos.x; hero.g.position.z = C.pos.z; hero.g.rotation.y = C.face; hero.animate(speed, dt);
       ring.position.set(C.pos.x, 0.7, C.pos.z); ring.scale.setScalar(1 + 0.08 * Math.sin(t / 300));
       headV.set(C.pos.x, 15.5, C.pos.z);
-      if (C.follow) C.target.lerp(C.pos, Math.min(1, dt * 6));
-      // far zoom: tilt toward a top-down sky view and push fog/clip planes out
-      const far = THREE.MathUtils.smoothstep(C.dist, 3000, 30000), pitch = C.pitch + (1.25 - C.pitch) * far * 0.6;
-      W.setFar(C.dist > 9000);
-      const cp = Math.cos(pitch) * C.dist;
+      if (C.follow) {
+        // calm follow: glide once when asked, then only move when the character nears the edge of a quiet zone
+        const dx = C.pos.x - C.target.x, dz = C.pos.z - C.target.z, d = Math.hypot(dx, dz);
+        if (C.glide) { const k = 1 - Math.exp(-dt * 3.5); C.target.x += dx * k; C.target.z += dz * k; if (d < 1) C.glide = false; }
+        else {
+          const zone = C.dist * 0.18;
+          if (d > zone) { const k = ((d - zone) / d) * Math.min(1, dt * 2.5); C.target.x += dx * k; C.target.z += dz * k; }
+        }
+      }
+      // far zoom: push fog/clip planes out
+      W.setFar(C.dist > 7000);
       const fg = scene.fog as THREE.Fog; fg.near = 1500 + C.dist * 1.2; fg.far = 7000 + C.dist * 4;
       const nr = Math.max(1, C.dist / 400); if (Math.abs(camera.near - nr) > nr * 0.2) { camera.near = nr; camera.far = Math.max(30000, C.dist * 8); camera.updateProjectionMatrix(); }
-      camera.position.set(C.target.x + Math.sin(C.yaw) * cp, Math.max(4, Math.sin(pitch) * C.dist), C.target.z + Math.cos(C.yaw) * cp);
-      camera.lookAt(C.target.x, C.target.y + 6, C.target.z);
+      applyCam();
       sun.position.set(C.target.x - 400, 800, C.target.z + 250); sun.target.position.copy(C.target);
       coins.forEach((m) => { m.visible = !p.collected.has(m.userData.id); m.rotation.z = t / 600; });
       if (p.next) { const nx = v3(p.next.place); mark.visible = pillar.visible = true; mark.position.set(nx.x, topOf(p.next.place.id) + 80 + Math.sin(t / 300) * 6, nx.z); pillar.position.set(nx.x, 300, nx.z); }
@@ -210,8 +235,23 @@ export default function WorldMap3D(props: Props) {
       W.update(t, dt);
       if (hq) composer.render(); else renderer.render(scene, camera);
       place(tagEl.current, headV);
+      // arrow on the screen edge pointing to the character when it is off screen
+      const ma = meArrow.current;
+      if (ma) {
+        tmp.copy(C.pos).project(camera);
+        const behind = tmp.z > 1, off = behind || Math.abs(tmp.x) > 0.92 || Math.abs(tmp.y) > 0.92;
+        ma.style.display = off ? '' : 'none';
+        if (off) {
+          let ax = tmp.x, ay = tmp.y; if (behind) { ax = -ax; ay = -ay; }
+          const a = Math.atan2(-ay * h, ax * w), hw = w / 2 - 34, hh = h / 2 - 34;
+          const k = Math.min(hw / Math.abs(Math.cos(a) || 1e-6), hh / Math.abs(Math.sin(a) || 1e-6));
+          ma.style.transform = `translate(${w / 2 + Math.cos(a) * k}px, ${h / 2 + Math.sin(a) * k}px) translate(-50%, -50%)`;
+          (ma.firstElementChild as HTMLElement).style.transform = `rotate(${a}rad)`;
+        }
+      }
+      if (t - last.rot > 80) { last.rot = t; const deg = Math.round((C.yaw * 180) / Math.PI) % 360; setRot((o) => (o === deg ? o : deg)); }
       const taken: R[] = [heroRect(), ...ctrl];
-      PLACES.forEach((pl) => place(labelEls.current[pl.id], anchors[pl.id], C.dist < 900 ? 2600 : C.dist < 9000 ? 1e9 : -1, taken));
+      PLACES.forEach((pl) => place(labelEls.current[pl.id], anchors[pl.id], C.dist < 900 ? 2600 : C.dist < 7000 ? 1e9 : -1, taken));
       ATTRACTIONS.forEach((a) => a.plate && place(labelEls.current['a:' + a.id], aAnchors[a.id], C.dist < 900 ? 2600 : C.dist < 6000 ? 1e9 : -1, taken));
       for (const node of Object.values(poiEls.current)) if (node) place(node, new THREE.Vector3(Number(node.dataset.x), PODIUM + 6, Number(node.dataset.z)), 1e9, taken);
       if (t - last.poi > 400) {
@@ -221,6 +261,7 @@ export default function WorldMap3D(props: Props) {
         const key = list.map((x) => x.n + x.lat).join('|');
         if (key !== last.key) { last.key = key; setPois(list); }
         const vw = 2 * C.dist * Math.tan((FOV * Math.PI) / 360);
+        setAlt(Math.round(camera.position.y / 100) / 10);
         setView((v) => (Math.abs(v.c.lat - c.lat) + Math.abs(v.c.lng - c.lng) + Math.abs(v.hero.lat - hp.lat) + Math.abs(v.hero.lng - hp.lng) < 1e-5 && Math.abs(v.h - vw) < 1 ? v : { c, hero: hp, w: vw * (w / h), h: vw }));
       }
     };
@@ -235,6 +276,7 @@ export default function WorldMap3D(props: Props) {
   }, [world, hq, avatar]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const C = cam.current;
+  const backToMe = () => { C.follow = true; C.glide = true; setFollow(true); };
   const from = me ?? view.hero;
   if (failed) return <p className="tip">⚠️ This device can't show the 3D map. Use the World map button instead.</p>;
   const night = isNight(light);
@@ -261,14 +303,17 @@ export default function WorldMap3D(props: Props) {
         <button onClick={() => setHq(!hq)} aria-label="Change graphics quality">{hq ? 'HD' : 'Lite'}</button>
       </div>
       {!me && <div className="gps-only" role="status">📍 Your character moves only with your phone's location. Allow location to start.</div>}
-      <MiniMap center={view.c} me={me ?? view.hero} hdg={me?.hdg ?? (next ? bearing(from, next.place) : undefined)} next={next?.place} view={{ w: view.w, h: view.h }} onJump={(c) => { C.target.copy(v3(c)); C.follow = false; setFollow(false); }} />
+      <MiniMap rot={rot} center={view.c} me={me ?? view.hero} hdg={me?.hdg ?? (next ? bearing(from, next.place) : undefined)} next={next?.place} view={{ w: view.w, h: view.h }} onJump={(c) => { C.target.copy(v3(c)); C.follow = false; C.glide = false; setFollow(false); }} />
+      <button className="me-edge" ref={meArrow} style={{ display: 'none' }} onClick={backToMe} aria-label={me ? 'Go back to me' : 'Go back to my character'}><i>➤</i></button>
+      {!follow && <button className="back-me" onClick={backToMe} onPointerDown={(e) => e.stopPropagation()}>📍 {me ? 'Back to me' : 'Back to my character'}</button>}
+      <span className="alt-chip" aria-label={`Camera height ${alt} kilometres`}>⛰️ {alt < 1 ? `${Math.round(alt * 1000)} m` : `${alt} km`} up</span>
       <div className="map-zoom" onPointerDown={(e) => e.stopPropagation()}>
         <button onClick={() => { C.dist = Math.max(40, C.dist * 0.6); }} aria-label="Zoom in">+</button>
         <button onClick={() => { C.dist = Math.min(MAX_D, C.dist * 1.6); }} aria-label="Zoom out">−</button>
-        <button onClick={() => { C.dist = C.dist > 8000 ? 260 : 45000; }} aria-label="Sky view or street view">🛰️</button>
+        <button onClick={() => { C.dist = C.dist > 5000 ? 260 : MAX_D; }} aria-label="Sky view (10 km) or street view">🛰️</button>
         <button onClick={() => { C.yaw += Math.PI / 4; }} aria-label="Turn left">⟲</button>
         <button onClick={() => { C.yaw -= Math.PI / 4; }} aria-label="Turn right">⟳</button>
-        <button className={follow ? 'on' : ''} aria-pressed={follow} onClick={() => { C.follow = true; setFollow(true); }} aria-label={me ? 'Follow me' : 'Back to my character'}>◎</button>
+        <button onClick={() => { C.yaw = 0; }} aria-label="Turn north up"><span className="needle" style={{ transform: `rotate(${rot}deg)` }}>🧭</span></button>
       </div>
       {next && (
         <div className="next-hint" onPointerDown={(e) => e.stopPropagation()}>

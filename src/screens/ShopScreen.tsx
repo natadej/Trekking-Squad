@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PlanItem, Profile } from '../types';
 import { PLACES, STRIP_ROAD, distanceM, placeById } from '../data/places';
 import { CAT_ICON, CAT_LABEL, loadShops, shopKey, stepsTo, type Area, type Shop, type ShopCat, type ShopData } from '../data/shops';
@@ -49,6 +49,17 @@ export default function ShopScreen({ p, me, stepsToday, counting, startSteps, co
   const [openA, setOpenA] = useState<Area>();
   const [openS, setOpenS] = useState<Shop>();
   const [more, setMore] = useState(false);
+  const [rot, setRot] = useState(0);
+  const fingers = useRef(new Map<number, { x: number; y: number }>());
+  const twist = useRef<{ a: number; r: number } | null>(null);
+  const ang = () => { const [a, b] = [...fingers.current.values()]; return (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI; };
+  const tDown = (e: React.PointerEvent) => { fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (fingers.current.size === 2) twist.current = { a: ang(), r: rot }; };
+  const tMove = (e: React.PointerEvent) => {
+    if (!fingers.current.has(e.pointerId)) return;
+    fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (twist.current && fingers.current.size === 2) setRot((((twist.current.r + ang() - twist.current.a) % 360) + 360) % 360);
+  };
+  const tUp = (e: React.PointerEvent) => { fingers.current.delete(e.pointerId); if (fingers.current.size < 2) twist.current = null; };
   useEffect(() => { loadShops().then(setData).catch(() => undefined); }, []);
   const from: LL = me ?? placeById(p.trip.hotelId) ?? placeById('venetian')!;
   const areaById = (id: string) => data?.areas.find((a) => a.id === id);
@@ -90,28 +101,36 @@ export default function ShopScreen({ p, me, stepsToday, counting, startSteps, co
         <p className="small muted">Walk to shops, outlets and shows to climb the leaderboard. Tap a pin to see what's there.</p>
       </div>
 
-      <div className="shopmap card">
+      <div className="shopmap card" onPointerDown={tDown} onPointerMove={tMove} onPointerUp={tUp} onPointerCancel={tUp}>
         <svg viewBox={`0 0 360 ${Math.round(H * SC)}`} role="img" aria-label="Map of Las Vegas shopping and fun places">
           <rect width="360" height={H * SC} fill="#efe0b9" />
+          <g transform={`rotate(${rot} 180 ${(H * SC) / 2})`}>
+          <rect x="-300" y="-300" width="960" height={H * SC + 600} fill="#efe0b9" />
           <polyline points={STRIP_ROAD.map(([la, ln]) => { const c = xy({ lat: la, lng: ln }); return `${c.x},${c.y}`; }).join(' ')} fill="none" stroke="#b9925a" strokeWidth="6" strokeLinecap="round" />
-          <text x={xy({ lat: 36.128, lng: -115.168 }).x + 8} y={xy({ lat: 36.128, lng: -115.168 }).y} className="lbl strip">THE STRIP</text>
+          <text x={xy({ lat: 36.128, lng: -115.168 }).x + 8} y={xy({ lat: 36.128, lng: -115.168 }).y} className="lbl strip" transform={`rotate(${-rot} ${xy({ lat: 36.128, lng: -115.168 }).x + 8} ${xy({ lat: 36.128, lng: -115.168 }).y})`}>THE STRIP</text>
           {PLACES.filter((x) => x.kind !== 'fun').map((x) => { const c = xy(x); return <circle key={x.id} cx={c.x} cy={c.y} r={x.kind === 'airport' ? 6 : 2.5} fill={x.kind === 'airport' ? '#7dd3fc' : '#c9a36a'} />; })}
           {data?.areas.filter((a) => !a.far).map((a) => {
             const c = pinAt[a.id] ?? xy(a), sel = area === a.id;
             return (
-              <g key={a.id} className={`pin ${sel ? 'on' : ''}`} transform={`translate(${c.x},${c.y})`} onClick={() => { setArea(a.id); setOpenA(a); setMore(false); }} role="button" aria-label={a.name}>
+              <g key={a.id} className={`pin ${sel ? 'on' : ''}`} transform={`translate(${c.x},${c.y}) rotate(${-rot})`} onClick={() => { setArea(a.id); setOpenA(a); setMore(false); }} role="button" aria-label={a.name}>
                 <circle r={sel ? 14 : 11} fill={got.has('spot:' + a.id) ? '#ffe58a' : '#fffdf6'} stroke={sel ? '#4a7fd8' : '#8a6a44'} strokeWidth="2" />
                 <text y="5" textAnchor="middle" fontSize="13">{a.icon}</text>
                 <text y="-15" textAnchor="middle" className="lbl">{a.short}</text>
               </g>
             );
           })}
-          {me && me.lat < B.n && me.lat > B.s && me.lng > B.w && me.lng < B.e && (() => { const c = xy(me); return <foreignObject x={c.x - 14} y={c.y - 30} width="28" height="34"><Hero a={p.avatar} size={28} /></foreignObject>; })()}
+          {me && me.lat < B.n && me.lat > B.s && me.lng > B.w && me.lng < B.e && (() => { const c = xy(me); return <g transform={`translate(${c.x},${c.y}) rotate(${-rot})`}><foreignObject x={-14} y={-30} width="28" height="34"><Hero a={p.avatar} size={28} /></foreignObject></g>; })()}
+          </g>
           {ant && <g className="pin" transform="translate(300,22)" onClick={() => setOpenA(ant)} role="button" aria-label={ant.name}>
             <rect x="-56" y="-14" width="110" height="26" rx="8" fill="#fffdf6" stroke="#8a6a44" strokeWidth="2" />
             <text x="-1" y="4" textAnchor="middle" className="lbl">🏜️ Antelope ➜ 270 mi</text>
           </g>}
         </svg>
+        <div className="map-zoom shop-turn">
+          <button onClick={() => setRot((r) => (r + 315) % 360)} aria-label="Turn left">⟲</button>
+          <button onClick={() => setRot((r) => (r + 45) % 360)} aria-label="Turn right">⟳</button>
+          <button onClick={() => setRot(0)} aria-label="Turn north up"><span className="needle" style={{ transform: `rotate(${rot}deg)` }}>🧭</span></button>
+        </div>
       </div>
 
       <div className="card">

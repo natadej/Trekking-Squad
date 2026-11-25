@@ -43,7 +43,7 @@ export interface Trip {
 }
 
 export type ItemKind =
-  | 'flight' | 'ride' | 'hotel' | 'meal' | 'session' | 'keynote' | 'event' | 'badge' | 'free' | 'custom';
+  | 'flight' | 'ride' | 'hotel' | 'meal' | 'session' | 'keynote' | 'event' | 'badge' | 'free' | 'custom' | 'walk';
 
 export interface PlanItem {
   id: string;
@@ -57,7 +57,11 @@ export interface PlanItem {
   note?: string;
   /** "Maybe": shown and synced to calendars as tentative */
   tentative?: boolean;
+  /** walk challenges: step target */
+  steps?: number;
 }
+
+export interface Walk { id: string; title: string; goal: number; base: number; day: string; place?: string }
 
 export interface Prefs {
   interests: string[];
@@ -100,6 +104,10 @@ export interface Profile {
   calToken: string;
   /** plan item ids the user answered "Maybe" */
   maybe?: string[];
+  /** finished walk challenges */
+  walks?: { id: string; day: string; steps: number }[];
+  /** walk challenge in progress */
+  walkNow?: Walk;
   /** step goals chosen on the welcome screen */
   goalDay?: number;
   goalTrip?: number;

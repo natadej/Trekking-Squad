@@ -17,6 +17,7 @@ import Leaders from './screens/Leaders';
 import ImportSheet from './screens/ImportSheet';
 import ShopScreen from './screens/ShopScreen';
 import { startMotionSteps } from './steps';
+import { walkReward } from './walks';
 import GoogleButton from './components/GoogleButton';
 import { STEP_M, type Area } from './data/shops';
 
@@ -139,6 +140,24 @@ export default function App() {
     }
   }, [stepsToday, p.quests, update, say]);
 
+  // walk challenges: start one, finish it by walking its steps, earn points, streaks and a chest every 3 walks
+  const startWalk = (w: { id: string; title: string; steps: number; place?: string }) => {
+    update((x) => ({ ...x, walkNow: { id: w.id, title: w.title, goal: w.steps, base: x.steps?.[nowPT().day] ?? 0, day: nowPT().day, place: w.place } }));
+    if (!counting) startSteps();
+    say(`🚶 Go! Walk ${w.steps.toLocaleString()} steps to finish.`);
+  };
+  const stopWalk = () => update((x) => ({ ...x, walkNow: undefined }));
+  useEffect(() => {
+    const w = p.walkNow;
+    if (!w) return;
+    if (w.day !== nowPT().day) { update((x) => ({ ...x, walkNow: undefined })); return; }
+    if (stepsToday - w.base < w.goal) return;
+    const done = [...(p.walks ?? []), { id: w.id, day: w.day, steps: w.goal }];
+    const r = walkReward(done);
+    update((x) => ({ ...x, walkNow: undefined, walks: done, points: x.points + r.points }));
+    say(r.chest ? `🎁 Reward chest! Walk done: +${r.points} points` : `🏅 Walk done! +${r.points} points${r.streak > 1 ? ` · 🔥 ${r.streak}-day streak` : ''}`, true);
+  }, [stepsToday, p.walkNow, p.walks, update, say]);
+
   const startGps = () => {
     if (!navigator.geolocation) { setGpsError('This device has no GPS.'); return; }
     if (gpsOn.current) return;
@@ -160,13 +179,13 @@ export default function App() {
     );
   };
 
-  const startSteps = async () => {
+  async function startSteps() {
     const stop = await startMotionSteps(() => { pend.current++; lastStep.current = Date.now(); });
     startGps();
     counted.current = true;
     setCounting(true);
     if (!stop) say('No motion sensor, so I count steps from GPS walking.');
-  };
+  }
   const collectSpot = (a: Area) => {
     update((x) => (x.coins.includes('spot:' + a.id) ? x : { ...x, coins: [...x.coins, 'spot:' + a.id], points: x.points + 50 }));
     say(`🪙 +50! You reached ${a.short}!`, true);
@@ -271,14 +290,14 @@ export default function App() {
         <span className="chip steps" title="Steps today">👣 {stepsToday.toLocaleString()}</span>
         <span className="chip gold zeny">🪙 {p.points.toLocaleString()} pts</span>
       </header>
-      {tab === 'home' && <Home p={p} plan={plan} questions={questions} onImport={() => setImporting(true)} go={(t) => { if (t === 'map') setMapMode('strip'); setTab(t as Tab); scrollTo(0, 0); }} checkIn={checkIn} />}
+      {tab === 'home' && <Home p={p} plan={plan} questions={questions} me={me} onWalk={startWalk} onStopWalk={stopWalk} onImport={() => setImporting(true)} go={(t) => { if (t === 'map') setMapMode('strip'); setTab(t as Tab); scrollTo(0, 0); }} checkIn={checkIn} />}
       {tab === 'plan' && <Plan p={p} plan={plan}
         onRemove={(i) => update((x) => ({ ...x, removed: [...x.removed, i.code || i.id], added: x.added.filter((c) => c !== i.code), custom: x.custom.filter((c) => c.id !== i.id) }))}
         onMaybe={(i, m) => update((x) => {
           const rest = (x.maybe ?? []).filter((y) => y !== i.id);
           return { ...x, maybe: m ? [...rest, i.id] : rest, custom: x.custom.map((c) => (c.id === i.id ? { ...c, tentative: m || undefined } : c)) };
         })}
-        onSync={syncCal} syncing={syncing}
+        onSync={syncCal} syncing={syncing} onWalk={(i) => { startWalk({ id: i.id, title: i.title, steps: i.steps ?? 1000, place: i.place }); setTab('home'); scrollTo(0, 0); }}
         onAdd={(i: PlanItem) => update((x) => ({ ...x, custom: [...x.custom, i] }))}
         onCalendar={downloadCal}
         onReset={() => update((x) => ({ ...x, removed: [], custom: x.custom }))} />}
