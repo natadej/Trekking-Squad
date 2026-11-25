@@ -167,3 +167,15 @@ revoke all on function public.tsq_leaders(integer, text) from public;
 grant execute on function public.tsq_save(uuid, text, jsonb, text, integer, integer, jsonb, text, integer, integer, integer, integer, integer, integer, text) to anon, authenticated;
 grant execute on function public.tsq_load(uuid, text, text) to anon, authenticated;
 grant execute on function public.tsq_leaders(integer, text) to anon, authenticated;
+
+-- Leaderboard with daily steps, so the app can rank any period (day, week, month, quarter, year)
+create or replace function public.tsq_board(p_limit integer default 200, p_ep text default 'vegas')
+returns table(id uuid, nick text, points integer, coins integer, avatar jsonb, steps_day text, steps_today integer, steps_total integer, avg_steps integer, days integer, goal_trip integer, goal_day integer, steps jsonb)
+language sql stable security definer set search_path = '' as $$
+  select id, nick, points, coins, avatar, steps_day, steps_today, steps_total, avg_steps, days, goal_trip, goal_day,
+         case when jsonb_typeof(profile->'steps') = 'object' then profile->'steps' else '{}'::jsonb end
+  from public.tsq_players
+  where nick <> '' and ep = coalesce(nullif(p_ep, ''), 'vegas') order by steps_total desc limit least(greatest(coalesce(p_limit, 200), 1), 500);
+$$;
+revoke all on function public.tsq_board(integer, text) from public;
+grant execute on function public.tsq_board(integer, text) to anon, authenticated;

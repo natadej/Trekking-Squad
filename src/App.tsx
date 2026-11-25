@@ -55,6 +55,7 @@ export default function App() {
   const pend = useRef(0);
   const lastStep = useRef(0);
   const lastFix = useRef<{ lat: number; lng: number; t: number }>(undefined);
+  const shownFix = useRef<{ lat: number; lng: number; acc: number; t: number }>(undefined);
 
   useEffect(() => {
     (EP.event ? fetch('data/sessions.json') : Promise.resolve(new Response('[]'))).then((r) => r.json()).then(setSessions).catch(() => setToast('Could not load classes. Check your internet.'));
@@ -166,10 +167,17 @@ export default function App() {
     if (!navigator.geolocation) { setGpsError('This device has no GPS.'); return; }
     if (gpsOn.current) return;
     gpsOn.current = true;
-    navigator.geolocation.watchPosition(
-      (pos) => {
+    const onFix = (pos: GeolocationPosition) => {
         setGpsError(undefined);
-        setMe({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy, hdg: pos.coords.heading });
+        const c = pos.coords, shown = shownFix.current, now = Date.now();
+        // skip a rough fix (cell / Wi-Fi) while a recent precise one exists
+        if (!(shown && c.accuracy > Math.max(60, shown.acc * 2) && now - shown.t < 45000)) {
+          // light smoothing so the dot doesn't jitter: blend by accuracy
+          const w = shown && now - shown.t < 10000 ? Math.min(0.6, (c.accuracy * c.accuracy) / (c.accuracy * c.accuracy + shown.acc * shown.acc)) : 0;
+          const lat = shown ? shown.lat * w + c.latitude * (1 - w) : c.latitude, lng = shown ? shown.lng * w + c.longitude * (1 - w) : c.longitude;
+          shownFix.current = { lat, lng, acc: c.accuracy, t: now };
+          setMe({ lat, lng, acc: Math.round(c.accuracy), hdg: c.speed && c.speed > 0.5 ? c.heading : null });
+        }
         const f = { lat: pos.coords.latitude, lng: pos.coords.longitude, t: Date.now() }, prev = lastFix.current;
         if (pos.coords.accuracy > 35) return;
         if (!prev) { lastFix.current = f; return; }
@@ -177,10 +185,13 @@ export default function App() {
         if (d < 15) return;
         if (counted.current && Date.now() - lastStep.current > 20000 && d / dt < 2.5) pend.current += Math.round(d / STEP_M);
         lastFix.current = f;
-      },
-      () => { gpsOn.current = false; setGpsError('Please allow location so your hero can move on the map.'); },
-      { enableHighAccuracy: true, maximumAge: 15000 },
-    );
+    };
+    const onErr = (e: GeolocationPositionError) => {
+      if (e.code !== e.PERMISSION_DENIED) return;
+      gpsOn.current = false; setGpsError('Please allow location so your hero can move on the map.');
+    };
+    navigator.geolocation.getCurrentPosition(onFix, () => undefined, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+    navigator.geolocation.watchPosition(onFix, onErr, { enableHighAccuracy: true, maximumAge: 5000 });
   };
 
   async function startSteps() {

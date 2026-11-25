@@ -20,6 +20,16 @@ interface Props {
 
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
+/** GPS accuracy circle as a polygon. */
+function accCircle(lat: number, lng: number, r: number): GeoJSON.Feature {
+  const k = Math.cos((lat * Math.PI) / 180), pts: [number, number][] = [];
+  for (let i = 0; i <= 48; i++) {
+    const a = (i / 48) * 2 * Math.PI;
+    pts.push([lng + (r * Math.sin(a)) / (111320 * k), lat + (r * Math.cos(a)) / 110540]);
+  }
+  return { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [pts] } };
+}
+
 /** A real street map with the same gestures as Google Maps: drag, pinch, twist to rotate, two-finger drag to tilt. */
 export default function RealMap({ world, me, nick, collected, focus, next, kinds, onPick, onPoi, only }: Props) {
   const box = useRef<HTMLDivElement>(null);
@@ -44,6 +54,9 @@ export default function RealMap({ world, me, nick, collected, focus, next, kinds
     const stop = (e: { originalEvent?: unknown }) => { if (e.originalEvent) setFollow(false); };
     m.on('dragstart', stop); m.on('rotatestart', stop);
     m.on('load', () => {
+      m.addSource('me-acc', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      m.addLayer({ id: 'me-acc', type: 'fill', source: 'me-acc', paint: { 'fill-color': '#2563eb', 'fill-opacity': 0.12 } });
+      m.addLayer({ id: 'me-acc-line', type: 'line', source: 'me-acc', paint: { 'line-color': '#2563eb', 'line-opacity': 0.5, 'line-width': 1 } });
       m.addSource('pois', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       m.addLayer({ id: 'poi-dot', type: 'circle', source: 'pois', minzoom: 15,
         paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 15, 4, 18, 8], 'circle-color': ['match', ['get', 'k'], 'food', '#f97316', 'shop', '#8b5cf6', 'partner', '#0ea5e9', '#eab308'], 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
@@ -88,6 +101,8 @@ export default function RealMap({ world, me, nick, collected, focus, next, kinds
   // GPS dot: moves on its own, the camera only moves when following
   useEffect(() => {
     const m = map.current; if (!m) return;
+    const acc = m.getSource('me-acc') as maplibregl.GeoJSONSource | undefined;
+    acc?.setData({ type: 'FeatureCollection', features: me ? [accCircle(me.lat, me.lng, Math.min(me.acc, 2000))] : [] });
     if (!me) { meMark.current?.remove(); meMark.current = undefined; return; }
     if (!meMark.current) {
       const el = document.createElement('div'); el.className = 'rm-me';
@@ -99,7 +114,7 @@ export default function RealMap({ world, me, nick, collected, focus, next, kinds
     (el.querySelector('.rm-cone') as HTMLElement).style.display = me.hdg == null ? 'none' : '';
     meMark.current.setLngLat([me.lng, me.lat]).setRotation(me.hdg ?? 0);
     if (follow) m.easeTo({ center: [me.lng, me.lat], duration: 600 });
-  }, [me, nick, follow]);
+  }, [me, nick, follow, ready]);
 
   const backToMe = () => {
     const m = map.current; if (!m || !me) return;

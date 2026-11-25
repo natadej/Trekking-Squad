@@ -90,6 +90,7 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today, a
         <div className="map-under">
           <span>{PLACES.filter((x) => got.has(x.id)).length}/{PLACES.length} places</span>
           {near && <span>📍 {near.d < 20000 ? `${near.pl.short} · ${fmt(near.d)}` : `Not in ${EP.city} yet`}</span>}
+          {me && <span className={me.acc > 50 ? 'gps-weak' : ''}>{me.acc > 50 ? `⚠️ GPS ±${me.acc} m, go near a window or outside` : `🎯 GPS ±${me.acc} m`}</span>}
           {view === '3d' && <button className="linkish" onClick={() => setFull(true)}>Flat map</button>}
         </div>
         {full && (

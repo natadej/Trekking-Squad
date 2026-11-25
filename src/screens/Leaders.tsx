@@ -4,17 +4,20 @@ import type { Profile } from '../types';
 import { nowPT } from '../time';
 import { CONTEST_LABEL, TROPHIES, contestAvg, goalsOf, trophyOf } from '../trophy';
 import Hero from '../components/Hero';
+import { PERIODS, periodLabel, periodRange, stepsIn, type Period } from '../periods';
 
 interface Props { p: Profile; rows: Leader[]; uid?: string; live: boolean; counting: boolean; startSteps: () => void }
 
 export default function Leaders({ p, rows, uid, live, counting, startSteps }: Props) {
-  const [span, setSpan] = useState<'trophy' | 'today'>('trophy');
+  const [span, setSpan] = useState<'trophy' | Period>('trophy');
   const day = nowPT().day;
   const c = contestAvg(p.steps), g = goalsOf(p);
-  const mine: Leader = { uid: uid ?? 'me', nick: p.nick, points: p.points, avatar: p.avatar, coins: p.coins.length, ...stepStats(p), avg: c.avg, days: c.days, goalDay: g.day, goalTrip: g.trip };
+  const mine: Leader = { uid: uid ?? 'me', nick: p.nick, points: p.points, avatar: p.avatar, coins: p.coins.length, ...stepStats(p), avg: c.avg, days: c.days, goalDay: g.day, goalTrip: g.trip, steps: p.steps };
   const all = live ? [mine, ...rows.filter((r) => r.uid !== mine.uid)] : [mine];
+  const range = span === 'trophy' ? undefined : periodRange(span, day);
   const today = (r: Leader) => (r.stepsDay === day ? r.stepsToday ?? 0 : 0);
-  const key = (r: Leader) => (span === 'trophy' ? r.avg ?? 0 : today(r));
+  const inRange = (r: Leader) => (span === 'day' ? Math.max(today(r), r.steps?.[day] ?? 0) : stepsIn(r.steps, range!));
+  const key = (r: Leader) => (span === 'trophy' ? r.avg ?? 0 : inRange(r));
   const list = [...all].sort((a, b) => key(b) - key(a) || (b.stepsTotal ?? 0) - (a.stepsTotal ?? 0));
   const me = trophyOf(c.avg), nextT = TROPHIES[TROPHIES.indexOf(me) - 1];
   const row = (r: Leader, i: number) => {
@@ -24,7 +27,7 @@ export default function Leaders({ p, rows, uid, live, counting, startSteps }: Pr
         <span className="rank">{i + 1}</span>
         <span className="mini"><Hero a={r.avatar} size={90} /></span>
         <span><b>{r.nick}</b>{mine_ && <span className="chip gold" style={{ marginLeft: 6 }}>You</span>}<br />
-          <span className="small muted">{span === 'trophy' ? `${(r.stepsTotal ?? 0).toLocaleString()} steps · ${r.days ?? 0} days` : `goal ${(r.goalDay ?? 10000).toLocaleString()}`}</span></span>
+          <span className="small muted">{span === 'trophy' ? `${(r.stepsTotal ?? 0).toLocaleString()} steps · ${r.days ?? 0} days` : span === 'day' ? `goal ${(r.goalDay ?? 10000).toLocaleString()}` : `${(r.stepsTotal ?? 0).toLocaleString()} steps in total`}</span></span>
         <b>👣 {key(r).toLocaleString()}{span === 'trophy' && <small className="muted">/day</small>}</b>
       </li>
     );
@@ -39,11 +42,12 @@ export default function Leaders({ p, rows, uid, live, counting, startSteps }: Pr
         <p className="small muted">{live ? '🟢 Live world ranking' : cloud() ? '⚪ Connecting to the world ranking…' : '⚪ This phone only for now.'}</p>
         {!counting && <button className="btn primary big" onClick={startSteps}>👣 Start counting my steps</button>}
       </div>
-      <div className="seg" role="group" aria-label="Ranking">
+      <div className="seg seg-grid" role="group" aria-label="Ranking">
         <button className={span === 'trophy' ? 'on' : ''} aria-pressed={span === 'trophy'} onClick={() => setSpan('trophy')}>🏆 Trophies</button>
-        <button className={span === 'today' ? 'on' : ''} aria-pressed={span === 'today'} onClick={() => setSpan('today')}>☀️ Today</button>
+        {PERIODS.map((x) => <button key={x.id} className={span === x.id ? 'on' : ''} aria-pressed={span === x.id} onClick={() => setSpan(x.id)}>{x.label}</button>)}
       </div>
-      {span === 'today' ? <ol className="leaders">{list.map(row)}</ol> : TROPHIES.map((t) => {
+      {range && <p className="small muted per-lbl">Most steps · {periodLabel(span as Period, range)}</p>}
+      {range ? <ol className="leaders">{list.filter((r) => r.uid === mine.uid || key(r) > 0).map(row)}</ol> : TROPHIES.map((t) => {
         const grp = list.filter((r) => trophyOf(r.avg ?? 0) === t);
         return (
           <section key={t.id} className={`tro-grp ${t.id}`}>

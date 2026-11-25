@@ -11,7 +11,7 @@ const ID_KEY = 'tsq.id.v1';
 export const GOOGLE_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
 export interface CloudUser { uid: string; secret: string; isAnonymous: boolean; email?: string }
-export interface Leader { uid: string; nick: string; points: number; avatar: Avatar; coins: number; stepsDay?: string; stepsToday?: number; stepsTotal?: number; avg?: number; days?: number; goalDay?: number; goalTrip?: number }
+export interface Leader { uid: string; nick: string; points: number; avatar: Avatar; coins: number; stepsDay?: string; stepsToday?: number; stepsTotal?: number; avg?: number; days?: number; goalDay?: number; goalTrip?: number; steps?: Record<string, number> }
 
 export const cloud = () => (URL && KEY ? { url: URL, key: KEY } : null);
 
@@ -131,12 +131,12 @@ export const stepStats = (p: Profile) => {
   return { stepsDay: day, stepsToday: steps[day] ?? 0, stepsTotal: Object.values(steps).reduce((a, b) => a + b, 0) };
 };
 
-interface Row { id: string; nick: string; points: number; coins: number; avatar: Avatar; steps_day: string; steps_today: number; steps_total: number; avg_steps: number; days: number; goal_trip: number; goal_day: number }
+interface Row { id: string; nick: string; points: number; coins: number; avatar: Avatar; steps_day: string; steps_today: number; steps_total: number; avg_steps: number; days: number; goal_trip: number; goal_day: number; steps?: Record<string, number> }
 export function watchLeaders(cb: (rows: Leader[]) => void, everyMs = 15000) {
   if (!cloud()) return () => {};
   let on = true;
-  const pull = () => rpc<Row[]>('tsq_leaders', { p_limit: 100, p_ep: EP.id })
-    .then((rows) => on && cb(rows.map((r) => ({ uid: r.id, nick: r.nick, points: r.points, coins: r.coins, avatar: r.avatar, stepsDay: r.steps_day, stepsToday: r.steps_today, stepsTotal: r.steps_total, avg: r.avg_steps, days: r.days, goalDay: r.goal_day, goalTrip: r.goal_trip }))))
+  const pull = () => rpc<Row[]>('tsq_board', { p_limit: 200, p_ep: EP.id })
+    .then((rows) => on && cb(rows.map((r) => ({ uid: r.id, nick: r.nick, points: r.points, coins: r.coins, avatar: r.avatar, stepsDay: r.steps_day, stepsToday: r.steps_today, stepsTotal: r.steps_total, avg: r.avg_steps, days: r.days, goalDay: r.goal_day, goalTrip: r.goal_trip, steps: r.steps }))))
     .catch(() => undefined);
   pull();
   const t = setInterval(pull, everyMs);
