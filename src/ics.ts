@@ -1,3 +1,4 @@
+import { EP } from './episode';
 import type { PlanItem } from './types';
 import { placeById } from './data/places';
 import { ptToUtc } from './time';
@@ -5,9 +6,9 @@ import { ptToUtc } from './time';
 const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/[,;]/g, (m) => '\\' + m);
 
-export function toIcs(items: PlanItem[], name = 'Trekking Squad: RIV2026 at Vegas') {
+export function toIcs(items: PlanItem[], name = `Trekking Squad: ${EP.name}`) {
   const now = stamp(new Date());
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Trekking Squad//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${esc(name)}`, 'X-WR-TIMEZONE:America/Los_Angeles'];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Trekking Squad//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${esc(name)}`, `X-WR-TIMEZONE:${EP.tz}`];
   for (const i of items) {
     const place = placeById(i.place);
     lines.push(
@@ -19,7 +20,7 @@ export function toIcs(items: PlanItem[], name = 'Trekking Squad: RIV2026 at Vega
       `SUMMARY:${esc(i.title)}`,
       `STATUS:${i.tentative ? 'TENTATIVE' : 'CONFIRMED'}`,
     );
-    if (place) lines.push(`LOCATION:${esc(place.name + ', Las Vegas')}`, `GEO:${place.lat};${place.lng}`);
+    if (place) lines.push(`LOCATION:${esc(place.name + `, ${EP.city}`)}`, `GEO:${place.lat};${place.lng}`);
     const desc = [i.code, i.note].filter(Boolean).join(' · ');
     if (desc) lines.push(`DESCRIPTION:${esc(desc)}`);
     lines.push('END:VEVENT');
@@ -42,7 +43,7 @@ export function googleCalLink(i: PlanItem) {
     text: i.title,
     dates: `${stamp(ptToUtc(i.day, i.start))}/${stamp(ptToUtc(i.day, i.end))}`,
     details: [i.code, i.note].filter(Boolean).join(' · '),
-    location: p ? p.name + ', Las Vegas' : '',
+    location: p ? p.name + `, ${EP.city}` : '',
   });
   return `https://calendar.google.com/calendar/render?${q}`;
 }

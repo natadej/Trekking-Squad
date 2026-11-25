@@ -557,3 +557,13 @@ h1 { font-size: 1.3rem; } h2 { font-size: 1.08rem; } h3 { font-size: 1rem; font-
 .type-form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .type-form .ok-line { margin: 0; color: #047857; font-weight: 600; font-size: .9rem; }
 .type-form .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ep-pick h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.ep-list { display: grid; gap: 8px; }
+.ep-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px; min-height: 64px; border-radius: 14px; border: 2px solid #e5e7eb; background: #fff; font: inherit; color: #111827; }
+.ep-opt.on { border-color: #7c3aed; background: #f5f3ff; }
+.ep-opt b { display: block; font-size: 1rem; }
+.ep-opt small { display: block; color: #4b5563; font-size: .85rem; }
+.ep-flag { font-size: 1.8rem; }
+.ep-on { margin-left: auto; font-size: .8rem; font-weight: 700; color: #6d28d9; white-space: nowrap; }
+.ep-switch { padding-bottom: 0; }
+.welcome .ep-pick { margin: 12px 16px 0; }

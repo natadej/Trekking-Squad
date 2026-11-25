@@ -3,6 +3,25 @@ import GoogleButton from '../components/GoogleButton';
 import type { Profile } from '../types';
 import type { CloudUser } from '../cloud';
 import { CONTEST_DAYS, CONTEST_LABEL, TROPHIES, goalsOf } from '../trophy';
+import { EP, EPISODES, switchEpisode } from '../episode';
+
+/** Pick a city episode. Each episode keeps its own steps, plan and leaderboard. */
+export function EpisodePicker() {
+  return (
+    <div className="card ep-pick">
+      <h2>Choose your trip</h2>
+      <div className="ep-list">
+        {Object.values(EPISODES).map((e) => (
+          <button key={e.id} className={`ep-opt ${e.id === EP.id ? 'on' : ''}`} aria-pressed={e.id === EP.id} onClick={() => e.id !== EP.id && switchEpisode(e.id)}>
+            <span className="ep-flag" aria-hidden>{e.flag}</span>
+            <span><b>{e.name}</b><small>{e.tagline}</small></span>
+            {e.id === EP.id && <span className="ep-on">✓ Playing</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   p: Profile;
@@ -22,12 +41,13 @@ export default function Welcome({ p, user, google, onError, onDone }: Props) {
   return (
     <div className="welcome">
       <div className="wl-hero">
-        <p className="wl-ep">RIV2026 · Las Vegas</p>
+        <p className="wl-ep">{EP.name} · {EP.city}</p>
         <h1>Trekking <b>Squad</b></h1>
-        <p>Walk Vegas during re:Invent and win a trophy.</p>
+        <p>{EP.tagline} Win a trophy.</p>
         <ul className="wl-tro">{TROPHIES.slice(0, 3).map((t) => <li key={t.id}><span>{t.icon}</span><b>{t.min.toLocaleString()}+</b><small>steps a day</small></li>)}</ul>
         <p className="wl-dates">Contest: {CONTEST_LABEL}</p>
       </div>
+      {step === 'login' && <EpisodePicker />}
       {step === 'login' ? (
         <div className="card wl-card">
           <h2>Start</h2>

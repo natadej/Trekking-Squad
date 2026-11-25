@@ -1,3 +1,4 @@
+import { EP } from '../episode';
 import type { PlanItem, Profile } from '../types';
 import Hero from '../components/Hero';
 import { photoUrl } from '../data/placeInfo';
@@ -16,7 +17,7 @@ const TIPS = [
   '💧 Drink a glass of water every hour. The desert air is very dry.',
   '🪑 Sit for 10 minutes between long walks. Casinos are bigger than they look.',
   '👟 Comfortable shoes beat smart shoes. Most people walk 8–12 km a day here.',
-  '🌙 Aim for 7 hours of sleep. Late nights add up fast in Vegas.',
+  '🌙 Aim for 7 hours of sleep. Late nights add up fast on a trip.',
   '🧴 Use sunscreen and lip balm, even in December.',
 ];
 
@@ -56,7 +57,7 @@ function WalkCard({ p, plan, me, onWalk, onStopWalk }: Pick<Props, 'p' | 'plan' 
     );
   }
   const planned = plan.find((i) => i.kind === 'walk' && !i.tentative && i.day === now.day && i.end > now.min && i.start - 30 <= now.min && !done.some((d) => d.id === i.id));
-  const from = me && PLACES.some((x) => distanceM(me, x) < 400) ? PLACES.filter((x) => x.id !== 'airport').sort((a, b) => distanceM(me, a) - distanceM(me, b))[0] : placeById(p.trip.hotelId) ?? placeById('venetian')!;
+  const from = me && PLACES.some((x) => distanceM(me, x) < 400) ? PLACES.filter((x) => x.id !== 'airport').sort((a, b) => distanceM(me, a) - distanceM(me, b))[0] : placeById(p.trip.hotelId) ?? placeById(EP.defaultHotel)!;
   const goal = GOALS[pick % 3], quick = walkTo(from, goal, Math.floor(pick / 3));
   const offer = planned ? { id: planned.id, title: planned.title, steps: planned.steps ?? goal, place: planned.place, why: planned.note?.split(' ~')[0] } : quick && { id: `quick-${now.day}-${now.min}`, title: `${quick.to.icon} ${quick.title}`, steps: quick.steps, place: from.id, why: quick.to.why };
   if (!offer) return null;
@@ -96,7 +97,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn, me, on
               <Hero a={p.avatar} size={96} wave />
               <div>
                 <h1>Hi, {p.nick.split(' ')[0]}</h1>
-                <p>{daysTo > 0 ? `${daysTo} days to re:Invent` : 'Your Vegas trip is on'}</p>
+                <p>{daysTo > 0 ? (EP.event ? `${daysTo} days to re:Invent` : `${daysTo} days to ${EP.city}`) : `Your ${EP.city} trip is on`}</p>
                 <span className="hb-pts">{tr.icon} {c.avg.toLocaleString()} a day · {tr.id === 'none' ? 'no trophy yet' : tr.name}</span>
               </div>
             </div>
@@ -110,7 +111,7 @@ export default function Home({ p, plan, questions, onImport, go, checkIn, me, on
       })()}
 
       <div className="quick">
-        <button onClick={() => go('map')} className="q-map"><span>🗺️</span>3D map</button>
+        <button onClick={() => go('map')} className="q-map"><span>🗺️</span>Map</button>
         <button onClick={() => go('plan')} className="q-plan"><span>🗓️</span>Trip plan</button>
         <button onClick={() => go('top')} className="q-top"><span>🏆</span>Leaders</button>
         <button onClick={onImport} className="q-mail"><span>📩</span>Add booking</button>

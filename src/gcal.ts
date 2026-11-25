@@ -1,3 +1,4 @@
+import { EP } from './episode';
 import type { Flight, PlanItem, Trip } from './types';
 import { GOOGLE_ID, loadGsi } from './cloud';
 import { nowPT, ptToUtc } from './time';
@@ -80,7 +81,7 @@ function body(i: PlanItem) {
   const place = placeById(i.place);
   return {
     summary: i.title,
-    location: place ? place.name + ', Las Vegas' : undefined,
+    location: place ? place.name + `, ${EP.city}` : undefined,
     description: [i.code, i.note, 'Planned with Trekking Squad'].filter(Boolean).join(' · '),
     start: { dateTime: ptToUtc(i.day, i.start).toISOString() },
     end: { dateTime: ptToUtc(i.day, Math.max(i.end, i.start + 5)).toISOString() },

@@ -1,3 +1,4 @@
+import { EP } from '../episode';
 import { useState } from 'react';
 import type { Place } from '../data/places';
 import { POI_ICON, POI_LABEL, type Poi, type PoiKind } from '../data/world';
@@ -6,7 +7,7 @@ import { mapsLink } from '../ui';
 import type { PlanItem, Profile } from '../types';
 import { AddToPlan } from '../screens/ShopScreen';
 
-const KIND_LABEL: Record<Place['kind'], string> = { airport: 'Airport', hotel: 'Resort & casino', venue: 're:Invent venue', fun: 'Landmark' };
+const KIND_LABEL: Record<Place['kind'], string> = { airport: 'Airport', hotel: EP.id === 'vegas' ? 'Resort & casino' : 'Hotel', venue: 're:Invent venue', fun: 'Landmark' };
 const KINDS: PoiKind[] = ['aws', 'partner', 'food', 'shop'];
 
 interface Props {

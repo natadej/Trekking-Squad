@@ -1,4 +1,6 @@
-export const TZ = 'America/Los_Angeles';
+import { EP } from './episode';
+
+export const TZ = EP.tz;
 export const DAYS_ALL = ['2026-11-28', '2026-11-29', '2026-11-30', '2026-12-01', '2026-12-02', '2026-12-03', '2026-12-04', '2026-12-05'];
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -24,15 +26,15 @@ export function addDays(day: string, n: number) {
   return dt.toISOString().slice(0, 10);
 }
 
-/** Current Las Vegas date + minutes. */
+/** Current trip-city date + minutes. */
 export function nowPT(date = new Date()) {
   const f = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   const p = Object.fromEntries(f.formatToParts(date).map((x) => [x.type, x.value]));
   return { day: `${p.year}-${p.month}-${p.day}`, min: Number(p.hour) * 60 + Number(p.minute) };
 }
 
-/** Pacific time → UTC Date. Nov/Dec are PST (UTC-8). */
+/** Trip-city local time → UTC Date (fixed offset for the trip dates). */
 export function ptToUtc(day: string, min: number) {
   const [y, mo, d] = day.split('-').map(Number);
-  return new Date(Date.UTC(y, mo - 1, d, 8, 0) + min * 60000);
+  return new Date(Date.UTC(y, mo - 1, d, -EP.utc, 0) + min * 60000);
 }

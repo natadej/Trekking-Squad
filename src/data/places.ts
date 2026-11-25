@@ -1,3 +1,6 @@
+import { EP } from '../episode';
+import { BANGKOK_PLACES } from './bangkok';
+
 export type PlaceKind = 'airport' | 'hotel' | 'venue' | 'fun';
 
 export interface Restaurant {
@@ -23,7 +26,7 @@ export interface Place {
 }
 
 /** Real coordinates (OpenStreetMap). The 15 hotels are the big Strip resorts most re:Invent attendees stay at. */
-export const PLACES: Place[] = [
+const VEGAS_PLACES: Place[] = [
   { id: 'airport', name: 'Harry Reid Airport (LAS)', short: 'Airport', kind: 'airport', lat: 36.0855, lng: -115.1498, icon: '✈️', color: '#7dd3fc', coins: 50,
     fact: 'Badge pickup desks are in Terminals 1 and 3 on Sun Nov 29 and Mon Nov 30, 7 AM to midnight.' },
   { id: 'mandalay', name: 'Mandalay Bay', short: 'Mandalay Bay', kind: 'hotel', lat: 36.0922, lng: -115.1758, icon: '🌴', color: '#f5c542', coins: 100,
@@ -91,6 +94,8 @@ export const PLACES: Place[] = [
     fact: 'The tallest observation tower in the USA, with thrill rides on the very top.' },
 ];
 
+export const PLACES: Place[] = EP.id === 'bangkok' ? BANGKOK_PLACES : VEGAS_PLACES;
+
 export const HOTELS = PLACES.filter((p) => p.kind === 'hotel' || (p.kind === 'venue' && p.id !== 'forum'));
 
 export const placeById = (id: string | undefined) => PLACES.find((p) => p.id === id);
@@ -112,7 +117,7 @@ export function distanceM(a: { lat: number; lng: number }, b: { lat: number; lng
 export const COLLECT_RADIUS_M = 160;
 
 /** Map bounds for the cartoon Strip. */
-export const BOUNDS = { north: 36.151, south: 36.079, west: -115.19, east: -115.142 };
+export const BOUNDS = EP.bounds;
 
 /** Las Vegas Blvd (the Strip) centre line, south to north. */
 export const STRIP_ROAD: [number, number][] = [

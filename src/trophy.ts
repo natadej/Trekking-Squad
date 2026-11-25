@@ -1,9 +1,10 @@
 import type { Profile } from './types';
 import { nowPT } from './time';
+import { EP } from './episode';
 
 /** Step contest window (Vegas days, inclusive). */
-export const CONTEST = { start: '2026-11-20', end: '2026-12-03' };
-export const CONTEST_LABEL = 'Nov 20 – Dec 3, 2026';
+export const CONTEST = { start: EP.contest.start, end: EP.contest.end };
+export const CONTEST_LABEL = EP.contest.label;
 const DAY = 86400000;
 const n = (d: string) => Date.parse(d + 'T00:00:00Z');
 export const CONTEST_DAYS = (n(CONTEST.end) - n(CONTEST.start)) / DAY + 1;

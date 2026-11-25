@@ -1,3 +1,4 @@
+import { EP } from './episode';
 import { addDays } from './time';
 
 type Done = { id: string; day: string; steps: number };
@@ -7,7 +8,7 @@ export const WALK_BADGES = [
   { n: 1, icon: '👟', name: 'First walk' },
   { n: 5, icon: '🧭', name: 'Explorer' },
   { n: 10, icon: '🏙️', name: 'Strip walker' },
-  { n: 25, icon: '👑', name: 'Vegas legend' },
+  { n: 25, icon: '👑', name: `${EP.city} legend` },
 ];
 
 /** Days in a row, ending on the last walk day, with at least one finished walk. */

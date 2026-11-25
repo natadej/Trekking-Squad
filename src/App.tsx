@@ -5,7 +5,8 @@ import { buildPlan, tripDays } from './planner';
 import { GCAL_PREFIX, syncCalendar } from './gcal';
 import { toIcs } from './ics';
 import { cloud, googleEnabled, loadRemote, saveRemote, signOutCloud, stepStats, syncCode, loadSyncCode, watchLeaders, watchUser, type CloudUser, type Leader } from './cloud';
-import Welcome from './screens/Welcome';
+import Welcome, { EpisodePicker } from './screens/Welcome';
+import { EP } from './episode';
 import { COLLECT_RADIUS_M, distanceM, placeById, type Place } from './data/places';
 import { nowPT } from './time';
 import Home, { type Question } from './screens/Home';
@@ -56,7 +57,7 @@ export default function App() {
   const lastFix = useRef<{ lat: number; lng: number; t: number }>(undefined);
 
   useEffect(() => {
-    fetch('data/sessions.json').then((r) => r.json()).then(setSessions).catch(() => setToast('Could not load classes. Check your internet.'));
+    (EP.event ? fetch('data/sessions.json') : Promise.resolve(new Response('[]'))).then((r) => r.json()).then(setSessions).catch(() => setToast('Could not load classes. Check your internet.'));
     if (shared) history.replaceState(null, '', location.pathname);
   }, []);
 
@@ -220,7 +221,7 @@ export default function App() {
   const questions: Question[] = [
     p.trip.arrive && !answered('pickup') && { id: 'pickup', icon: '🚗', q: 'When you land, is someone picking you up?', yes: 'Yes, a ride!', no: `No, take Uber to ${hotel}`, onYes: () => answer('pickup', (x) => ({ ...x, trip: { ...x.trip, pickup: 'friend' } })), onNo: () => answer('pickup', (x) => ({ ...x, trip: { ...x.trip, pickup: 'uber' } })) },
     p.trip.arrive && !answered('dinner') && { id: 'dinner', icon: '🍕', q: 'Want me to plan dinner the night you land?', onYes: () => answer('dinner', (x) => ({ ...x, trip: { ...x.trip, arrivalDinner: true } })), onNo: () => answer('dinner', (x) => ({ ...x, trip: { ...x.trip, arrivalDinner: false } })) },
-    !answered('parties') && { id: 'parties', icon: '🎉', q: 'Go to the fun parties, like re:Play at the stadium?', onYes: () => answer('parties', (x) => ({ ...x, prefs: { ...x.prefs, parties: true } })), onNo: () => answer('parties', (x) => ({ ...x, prefs: { ...x.prefs, parties: false } })) },
+    EP.event && !answered('parties') && { id: 'parties', icon: '🎉', q: 'Go to the fun parties, like re:Play at the stadium?', onYes: () => answer('parties', (x) => ({ ...x, prefs: { ...x.prefs, parties: true } })), onNo: () => answer('parties', (x) => ({ ...x, prefs: { ...x.prefs, parties: false } })) },
     !answered('pace') && { id: 'pace', icon: '⚡', q: 'Want a super busy plan with up to 6 classes a day?', yes: 'Yes, max!', no: 'No, 4 is plenty', onYes: () => answer('pace', (x) => ({ ...x, prefs: { ...x.prefs, pace: 'busy' } })), onNo: () => answer('pace', (x) => ({ ...x, prefs: { ...x.prefs, pace: 'chill' } })) },
   ].filter(Boolean) as Question[];
 
@@ -289,7 +290,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="logo"><span>Trekking <b>Squad</b></span><small>RIV2026 · Las Vegas</small></div>
+        <div className="logo"><span>Trekking <b>Squad</b></span><small>{EP.name}</small></div>
         <span className="chip steps" title="Steps today">👣 {stepsToday.toLocaleString()}</span>
         <span className="chip gold zeny">🪙 {p.points.toLocaleString()} pts</span>
       </header>
@@ -317,6 +318,7 @@ export default function App() {
         me={me} onLearn={(s, w) => update((x) => ({ ...x, learn: learnFrom(x.learn, s, w) }))}
         toggle={(c) => update((x) => { const s = sessions.find((y) => y.c === c); const on = x.added.includes(c); const learn = s ? learnFrom(x.learn, s, on ? -1 : 2) : x.learn;
           return on ? { ...x, learn, added: x.added.filter((y) => y !== c) } : { ...x, learn, added: [...x.added, c], removed: x.removed.filter((y) => y !== c) }; })} />}
+      {tab === 'hero' && <div className="screen ep-switch"><EpisodePicker /></div>}
       {tab === 'hero' && <HeroStudio p={p} setAvatar={(a: Avatar) => update((x) => ({ ...x, avatar: a }))} setNick={(n) => update((x) => ({ ...x, nick: n }))}
         addInterest={(id) => { update((x) => ({ ...x, prefs: { ...x.prefs, interests: x.prefs.interests.includes(id) ? x.prefs.interests : [...x.prefs.interests, id] } })); say('⭐ Added. Class suggestions now include this topic.', true); }} account={account} />}
       {tab === 'top' && <Leaders p={p} rows={leaders} uid={user?.uid} live={!!user && leaders.length > 0} counting={counting} startSteps={startSteps} />}
@@ -326,7 +328,7 @@ export default function App() {
       {party > 0 && <div className="confetti" key={party} aria-hidden>{Array.from({ length: 28 }, (_, i) => <i key={i} style={{ left: `${(i * 37) % 100}%`, background: ['#facc15', '#f472b6', '#60a5fa', '#34d399', '#a78bfa'][i % 5], animationDelay: `${(i % 7) * 0.08}s` }} />)}</div>}
 
       <nav className="tabs"><div className="tabs-in">
-        {TABS.map(([id, ico, label]) => (
+        {TABS.filter(([id]) => EP.event || id !== 'classes').map(([id, ico, label]) => (
           <button key={id} className={`tab ${tab === id ? 'on' : ''}`} aria-current={tab === id} onClick={() => { setTab(id); scrollTo(0, 0); }}>
             <span className="ti">{ico}</span>{label}
           </button>

@@ -1,3 +1,4 @@
+import { EP } from '../episode';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PlanItem, Profile } from '../types';
 import { PLACES, STRIP_ROAD, distanceM, placeById } from '../data/places';
@@ -61,11 +62,11 @@ export default function ShopScreen({ p, me, stepsToday, counting, startSteps, co
   };
   const tUp = (e: React.PointerEvent) => { fingers.current.delete(e.pointerId); if (fingers.current.size < 2) twist.current = null; };
   useEffect(() => { loadShops().then(setData).catch(() => undefined); }, []);
-  const from: LL = me ?? placeById(p.trip.hotelId) ?? placeById('venetian')!;
+  const from: LL = me ?? placeById(p.trip.hotelId) ?? placeById(EP.defaultHotel)!;
   const areaById = (id: string) => data?.areas.find((a) => a.id === id);
   const wish = new Set(p.wish);
   const got = new Set(p.coins);
-  const today = DAY[new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })).getDay()];
+  const today = DAY[new Date(new Date().toLocaleString('en-US', { timeZone: EP.tz })).getDay()];
 
   const hits = useMemo(() => {
     if (!data) return [];

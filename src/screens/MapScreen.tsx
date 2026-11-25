@@ -1,3 +1,4 @@
+import { EP } from '../episode';
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import type { PlanItem, Profile } from '../types';
 import WorldMap from '../components/WorldMap';
@@ -28,14 +29,14 @@ const KINDS: PoiKind[] = ['food', 'shop', 'partner', 'aws'];
 const ORDER: PoiKind[] = ['partner', 'aws', 'food', 'shop'];
 
 function vegasNow() {
-  const t = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  const t = new Date(new Date().toLocaleString('en-US', { timeZone: EP.tz }));
   return { day: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`, min: t.getHours() * 60 + t.getMinutes() };
 }
 
 export default function MapScreen({ p, me, gpsError, startGps, collect, today, addPlan, onShop, toggleFav }: Props) {
   const [favOnly, setFavOnly] = useState(false);
   const favs = useMemo(() => new Set(p.fav ?? []), [p.fav]);
-  const [view, setView] = useState<'map' | '3d'>(() => (localStorage.getItem(VIEW_KEY) === '3d' ? '3d' : 'map'));
+  const [view, setView] = useState<'map' | '3d'>(() => (EP.id === 'vegas' && localStorage.getItem(VIEW_KEY) === '3d' ? '3d' : 'map'));
   useEffect(() => { localStorage.setItem(VIEW_KEY, view); }, [view]);
   const [pick, setPick] = useState<Place>();
   const [poi, setPoi] = useState<Poi>();
@@ -47,7 +48,7 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today, a
   const now = vegasNow();
   const near = me ? PLACES.map((pl) => ({ pl, d: distanceM(me, pl) })).sort((a, b) => a.d - b.d)[0] : undefined;
   const canGet = (pl: Place) => !!me && me.acc <= 120 && distanceM(me, pl) <= COLLECT_RADIUS_M && !got.has(pl.id);
-  const home = placeById(p.trip.hotelId) ?? placeById('venetian')!;
+  const home = placeById(p.trip.hotelId) ?? placeById(EP.defaultHotel)!;
 
   const next = useMemo(() => {
     const it = today.find((i) => i.place && (i.day !== now.day || i.end > now.min) && i.kind !== 'ride') ?? today.find((i) => i.place);
@@ -73,8 +74,8 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today, a
         <div className="map-over">
           <div className="seg map-views" role="group" aria-label="Map view">
             <button className={view === 'map' ? 'on' : ''} aria-pressed={view === 'map'} onClick={() => setView('map')}>Map</button>
-            <button className={view === '3d' ? 'on' : ''} aria-pressed={view === '3d'} onClick={() => setView('3d')}>3D game</button>
-            <button onClick={onShop}>Shops</button>
+            {EP.id === 'vegas' && <button className={view === '3d' ? 'on' : ''} aria-pressed={view === '3d'} onClick={() => setView('3d')}>3D game</button>}
+            {EP.id === 'vegas' && <button onClick={onShop}>Shops</button>}
           </div>
           <div className="chips cats" role="group" aria-label="Show on map">
             <button className={`chip ${favOnly ? 'on' : ''}`} aria-pressed={favOnly} onClick={() => setFavOnly(!favOnly)}>⭐ Favourites{favs.size ? ` (${favs.size})` : ''}</button>
@@ -88,7 +89,7 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today, a
         </div>
         <div className="map-under">
           <span>{PLACES.filter((x) => got.has(x.id)).length}/{PLACES.length} places</span>
-          {near && <span>📍 {near.d < 20000 ? `${near.pl.short} · ${fmt(near.d)}` : 'Not in Vegas yet'}</span>}
+          {near && <span>📍 {near.d < 20000 ? `${near.pl.short} · ${fmt(near.d)}` : `Not in ${EP.city} yet`}</span>}
           {view === '3d' && <button className="linkish" onClick={() => setFull(true)}>Flat map</button>}
         </div>
         {full && (

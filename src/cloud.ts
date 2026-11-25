@@ -1,3 +1,4 @@
+import { EP } from './episode';
 import { nowPT } from './time';
 import type { Avatar, Profile } from './types';
 import { contestAvg, goalsOf } from './trophy';
@@ -104,7 +105,7 @@ export const syncCode = () => { const u = identity(); return `${u.uid}.${u.secre
 export async function loadSyncCode(code: string) {
   const m = code.trim().match(/^([0-9a-f-]{36})\.([0-9a-f]{24,})$/i);
   if (!m) throw new Error('That code does not look right');
-  const prof = await rpc<Profile | null>('tsq_load', { p_id: m[1], p_secret: m[2] });
+  const prof = await rpc<Profile | null>('tsq_load', { p_id: m[1], p_secret: m[2], p_ep: EP.id });
   if (!prof) throw new Error('No profile found for that code');
   localStorage.setItem(ID_KEY, JSON.stringify({ uid: m[1], secret: m[2] }));
   listener?.(identity());
@@ -112,7 +113,7 @@ export async function loadSyncCode(code: string) {
 }
 
 export async function loadRemote(u: CloudUser): Promise<Profile | null> {
-  return cloud() ? rpc<Profile | null>('tsq_load', { p_id: u.uid, p_secret: u.secret }) : null;
+  return cloud() ? rpc<Profile | null>('tsq_load', { p_id: u.uid, p_secret: u.secret, p_ep: EP.id }) : null;
 }
 
 export async function saveRemote(u: CloudUser, p: Profile) {
@@ -121,7 +122,7 @@ export async function saveRemote(u: CloudUser, p: Profile) {
   await rpc('tsq_save', {
     p_avg: c.avg, p_days: c.days, p_goal_trip: g.trip, p_goal_day: g.day,
     p_id: u.uid, p_secret: u.secret, p_profile: p, p_nick: p.nick.slice(0, 24), p_points: p.points, p_coins: p.coins.length, p_avatar: p.avatar,
-    p_steps_day: s.stepsDay, p_steps_today: s.stepsToday, p_steps_total: s.stepsTotal,
+    p_steps_day: s.stepsDay, p_steps_today: s.stepsToday, p_steps_total: s.stepsTotal, p_ep: EP.id,
   });
 }
 
@@ -134,7 +135,7 @@ interface Row { id: string; nick: string; points: number; coins: number; avatar:
 export function watchLeaders(cb: (rows: Leader[]) => void, everyMs = 15000) {
   if (!cloud()) return () => {};
   let on = true;
-  const pull = () => rpc<Row[]>('tsq_leaders', { p_limit: 100 })
+  const pull = () => rpc<Row[]>('tsq_leaders', { p_limit: 100, p_ep: EP.id })
     .then((rows) => on && cb(rows.map((r) => ({ uid: r.id, nick: r.nick, points: r.points, coins: r.coins, avatar: r.avatar, stepsDay: r.steps_day, stepsToday: r.steps_today, stepsTotal: r.steps_total, avg: r.avg_steps, days: r.days, goalDay: r.goal_day, goalTrip: r.goal_trip }))))
     .catch(() => undefined);
   pull();

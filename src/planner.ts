@@ -1,3 +1,4 @@
+import { EP } from './episode';
 import type { PlanItem, Prefs, Profile, Session, Trip } from './types';
 import { BADGE, FIXED_EVENTS, SESSION_HOURS } from './data/agenda';
 import { HANDS_ON, INTERESTS, TALKS } from './data/interests';
@@ -7,8 +8,8 @@ import { learnScore, type Learn } from './learn';
 import { SPOTS, SPOT_ICON, SPOT_VERB, type Spot } from './data/spots';
 import { addDays, hm } from './time';
 
-export const DEFAULT_ARRIVE = '2026-11-28';
-export const DEFAULT_DEPART = '2026-12-03';
+export const DEFAULT_ARRIVE = EP.event ? '2026-11-28' : EP.contest.start;
+export const DEFAULT_DEPART = EP.contest.end;
 
 /** Minutes to get between two places (AWS advises 30–45 min between venues). */
 export function travelMin(a?: string, b?: string) {
@@ -76,20 +77,20 @@ function add(ctx: Ctx, it: PlanItem) {
 export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
   const ctx: Ctx = { items: [] };
   const { trip, prefs } = p;
-  const hotel = trip.hotelId || 'venetian';
+  const hotel = trip.hotelId || EP.defaultHotel;
   const days = tripDays(trip);
   const first = days[0], last = days[days.length - 1];
   const removed = new Set(p.removed);
-  let badgeDone = false;
+  let badgeDone = !EP.event;
   const missed: string[] = [];
 
   // Arrival
   const arr = trip.arrive;
   if (arr) {
-    add(ctx, { id: 'arrive', day: arr.arrDate, start: arr.arrTime, end: arr.arrTime + 5, title: `Land in Vegas! ${arr.airline} ${arr.number}`, kind: 'flight', place: 'airport', note: `${arr.from} → LAS` });
+    add(ctx, { id: 'arrive', day: arr.arrDate, start: arr.arrTime, end: arr.arrTime + 5, title: `Land in ${EP.city}! ${arr.airline} ${arr.number}`, kind: 'flight', place: 'airport', note: `${arr.from} → ${EP.airport}` });
     let t = arr.arrTime + 30;
     add(ctx, { id: 'bags', day: arr.arrDate, start: arr.arrTime + 5, end: t, title: 'Grab your bags', kind: 'free', place: 'airport' });
-    const desk = BADGE.find((b) => b.day === arr.arrDate && b.place === 'airport' && t >= b.start && t + 20 <= b.end);
+    const desk = EP.event && BADGE.find((b) => b.day === arr.arrDate && b.place === 'airport' && t >= b.start && t + 20 <= b.end);
     if (desk) {
       add(ctx, { id: 'badge', day: arr.arrDate, start: t, end: t + 20, title: 'Pick up your re:Invent badge (T1/T3)', kind: 'badge', place: 'airport', note: 'Bring a government ID' });
       t += 20;
@@ -112,7 +113,7 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
     const leave = dep.depTime - 150;
     add(ctx, { id: 'checkout', day: dep.depDate, start: Math.min(leave - 30, 11 * 60), end: Math.min(leave - 15, 11 * 60 + 15), title: 'Check out (pack your swag!)', kind: 'hotel', place: hotel });
     add(ctx, { id: 'ride-out', day: dep.depDate, start: leave, end: leave + 30, title: trip.dropoff === 'friend' ? 'Ride to the airport' : 'Uber/Lyft to the airport', kind: 'ride', place: hotel });
-    add(ctx, { id: 'depart', day: dep.depDate, start: dep.depTime - 120, end: dep.depTime, title: `Fly home: ${dep.airline} ${dep.number}`, kind: 'flight', place: 'airport', note: `Be at the gate 30 min early · LAS → ${dep.to}` });
+    add(ctx, { id: 'depart', day: dep.depDate, start: dep.depTime - 120, end: dep.depTime, title: `Fly home: ${dep.airline} ${dep.number}`, kind: 'flight', place: 'airport', note: `Be at the gate 30 min early · ${EP.airport} → ${dep.to}` });
   }
 
   const usable = (day: string) => {
@@ -127,7 +128,7 @@ export function buildPlan(p: Profile, sessions: Session[]): PlanItem[] {
     if (onTrip && lo < 7 * 60 + 45 && hi > 8 * 60) add(ctx, { id: 'breakfast-' + day, day, start: 7 * 60, end: 7 * 60 + 40, title: 'Breakfast', kind: 'meal', place: hotel });
 
     // Fixed events (keynotes, parties)
-    for (const ev of FIXED_EVENTS.filter((e) => e.day === day)) {
+    for (const ev of (EP.event ? FIXED_EVENTS : []).filter((e) => e.day === day)) {
       if (removed.has(ev.id)) continue;
       if (ev.optional && !(prefs.parties || ev.kind === 'keynote')) continue;
       if (ev.start < lo || ev.start + 60 > hi) {

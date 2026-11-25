@@ -1,6 +1,7 @@
 import type { Profile } from './types';
+import { epKey } from './episode';
 
-const KEY = 'vq.profile.v1';
+const KEY = epKey('vq.profile.v1');
 
 const ADJ = ['Captain', 'Rocket', 'Super', 'Turbo', 'Cosmic', 'Lucky', 'Ninja', 'Pixel', 'Mega', 'Sunny', 'Jolly', 'Brave'];
 const NOUN = ['Cactus', 'Lambda', 'Panda', 'Dragon', 'Llama', 'Comet', 'Robot', 'Penguin', 'Gecko', 'Falcon', 'Taco', 'Otter'];
