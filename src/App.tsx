@@ -303,14 +303,14 @@ export default function App() {
         onAdd={(i: PlanItem) => update((x) => ({ ...x, custom: [...x.custom, i] }))}
         onCalendar={downloadCal}
         onReset={() => update((x) => ({ ...x, removed: [], custom: x.custom }))} />}
-      {tab === 'map' && (
+      {tab === 'map' && mapMode === 'shop' && (
         <div className="seg" role="group" aria-label="Map">
-          <button className={mapMode === 'strip' ? 'on' : ''} aria-pressed={mapMode === 'strip'} onClick={() => setMapMode('strip')}>🗺️ Strip map</button>
-          <button className={mapMode === 'shop' ? 'on' : ''} aria-pressed={mapMode === 'shop'} onClick={() => setMapMode('shop')}>🛍️ Shopping & Fun</button>
+          <button onClick={() => setMapMode('strip')}>🗺️ Map</button>
+          <button className="on" aria-pressed>🛍️ Shopping & Fun</button>
         </div>
       )}
       {tab === 'map' && mapMode === 'shop' && <ShopScreen p={p} me={me} stepsToday={stepsToday} counting={counting} startSteps={startSteps} collectSpot={collectSpot} addPlan={addPlan} toggleWish={toggleWish} />}
-      {tab === 'map' && mapMode === 'strip' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} addPlan={addPlan} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} />}
+      {tab === 'map' && mapMode === 'strip' && <MapScreen p={p} me={me} gpsError={gpsError} startGps={startGps} collect={collect} addPlan={addPlan} today={plan.filter((i) => i.day === (plan.some((j) => j.day === now.day) ? now.day : plan[0]?.day))} onShop={() => setMapMode('shop')} />}
       {tab === 'classes' && <Classes p={p} sessions={sessions} planned={new Set(plan.map((i) => i.code).filter(Boolean) as string[])}
         setPrefs={(f: (x: Prefs) => Prefs) => update((x) => ({ ...x, prefs: f(x.prefs) }))}
         toggle={(c) => update((x) => (x.added.includes(c) ? { ...x, added: x.added.filter((y) => y !== c) } : { ...x, added: [...x.added, c], removed: x.removed.filter((y) => y !== c) }))} />}

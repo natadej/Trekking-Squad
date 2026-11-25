@@ -3,6 +3,7 @@ import { BADGE, FIXED_EVENTS, SESSION_HOURS } from './data/agenda';
 import { HANDS_ON, INTERESTS, TALKS } from './data/interests';
 import { PLACES, distanceM, placeById, VENUE_PLACE, type Place } from './data/places';
 import { STEP_M } from './data/shops';
+import { SPOTS, SPOT_ICON, SPOT_VERB, type Spot } from './data/spots';
 import { addDays, hm } from './time';
 
 export const DEFAULT_ARRIVE = '2026-11-28';
@@ -217,12 +218,23 @@ const WALK_PER_MIN = 100;
 const WALK_FROM = 8 * 60, WALK_TO = 21 * 60 + 30;
 
 /** A walk to a real spot and back that takes about `goal` steps. */
+export interface WalkTarget { id: string; short: string; name: string; lat: number; lng: number; icon: string; why: string; verb: string }
+
+const target = (x: Place | Spot): WalkTarget => 'why' in x
+  ? { id: x.id, short: x.short, name: x.name, lat: x.lat, lng: x.lng, icon: SPOT_ICON[x.kind], why: x.why, verb: SPOT_VERB[x.kind] }
+  : { id: x.id, short: x.short, name: x.name, lat: x.lat, lng: x.lng, icon: x.icon, why: x.fact, verb: 'Visit' };
+
+/** A real, interesting spot about `goal` steps there and back (coffee, shop, sight or photo spot first). */
 export function walkTo(from: Place, goal: number, skip = 0) {
   const want = (goal * STEP_M) / 2;
-  const opts = PLACES.filter((x) => x.id !== from.id && x.id !== 'airport' && distanceM(from, x) > 150)
-    .map((x) => ({ x, off: Math.abs(distanceM(from, x) - want) })).sort((a, b) => a.off - b.off);
-  const to = opts[skip % Math.max(1, Math.min(4, opts.length))]?.x;
-  return to ? { to, steps: Math.round((2 * distanceM(from, to)) / STEP_M / 100) * 100 } : undefined;
+  const opts = [...SPOTS, ...PLACES.filter((x) => x.kind !== 'airport')]
+    .filter((x) => x.id !== from.id && distanceM(from, x) > 150)
+    .map((x) => ({ x, off: Math.abs(distanceM(from, x) - want) + ('why' in x ? 0 : 150) }))
+    .sort((a, b) => a.off - b.off);
+  const pick = opts[skip % Math.max(1, Math.min(5, opts.length))]?.x;
+  if (!pick) return undefined;
+  const to = target(pick);
+  return { to, steps: Math.round((2 * distanceM(from, to)) / STEP_M / 100) * 100, title: `${to.verb} ${to.short}` };
 }
 
 /** Free gaps of 20+ minutes become optional 1,000–3,000-step walk challenges. */
@@ -236,7 +248,7 @@ export function walkGaps(items: PlanItem[], hotel: string): PlanItem[] {
     const lastEnd = Math.max(...s.map((x) => x.end));
     if (lastEnd < WALK_TO - 15 && !s.some((x) => x.kind === 'flight' && x.end >= lastEnd)) s.push({ id: '', day, start: WALK_TO + 20, end: WALK_TO + 20, title: '', kind: 'free', place: s[s.length - 1].place });
     let n = 0;
-    for (let k = 1; k < s.length && n < 3; k++) {
+    for (let k = 1; k < s.length && n < 2; k++) {
       const a = s[k - 1], b = s[k];
       if (['flight', 'ride'].includes(a.kind) || ['flight', 'ride'].includes(b.kind)) continue;
       const end = Math.max(...s.slice(0, k).map((x) => x.end));
@@ -245,12 +257,12 @@ export function walkGaps(items: PlanItem[], hotel: string): PlanItem[] {
       if (mins < 15) continue;
       const goal = Math.max(1000, Math.min(3000, Math.floor((mins * WALK_PER_MIN) / 500) * 500));
       const from = placeById(a.place) ?? placeById(hotel);
-      const w = from && walkTo(from, goal);
+      const w = from && walkTo(from, goal, n + out.length);
       if (!w) continue;
       const len = Math.ceil(w.steps / WALK_PER_MIN);
       if (len > stop - start) continue;
-      out.push({ id: `walk-${day}-${start}`, day, start, end: start + len, title: `Walk to ${w.to.short} and back`, kind: 'walk', place: from!.id, steps: w.steps,
-        note: `~${w.steps.toLocaleString()} steps · finish it for +${Math.round(w.steps / 10)} points` });
+      out.push({ id: `walk-${day}-${start}`, day, start, end: start + len, title: `${w.to.icon} ${w.title}`, kind: 'walk', place: from!.id, steps: w.steps,
+        note: `${w.to.why} ~${w.steps.toLocaleString()} steps there and back · +${Math.round(w.steps / 10)} points` });
       n++;
     }
   }

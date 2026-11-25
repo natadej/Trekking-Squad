@@ -58,13 +58,14 @@ function WalkCard({ p, plan, me, onWalk, onStopWalk }: Pick<Props, 'p' | 'plan' 
   const planned = plan.find((i) => i.kind === 'walk' && !i.tentative && i.day === now.day && i.end > now.min && i.start - 30 <= now.min && !done.some((d) => d.id === i.id));
   const from = me && PLACES.some((x) => distanceM(me, x) < 400) ? PLACES.filter((x) => x.id !== 'airport').sort((a, b) => distanceM(me, a) - distanceM(me, b))[0] : placeById(p.trip.hotelId) ?? placeById('venetian')!;
   const goal = GOALS[pick % 3], quick = walkTo(from, goal, Math.floor(pick / 3));
-  const offer = planned ? { id: planned.id, title: planned.title, steps: planned.steps ?? goal, place: planned.place } : quick && { id: `quick-${now.day}-${now.min}`, title: `Walk from ${from.short} to ${quick.to.short} and back`, steps: quick.steps, place: from.id };
+  const offer = planned ? { id: planned.id, title: planned.title, steps: planned.steps ?? goal, place: planned.place, why: planned.note?.split(' ~')[0] } : quick && { id: `quick-${now.day}-${now.min}`, title: `${quick.to.icon} ${quick.title}`, steps: quick.steps, place: from.id, why: quick.to.why };
   if (!offer) return null;
   return (
     <div className="card walk pop">
       <p className="label">{planned ? '🚶 Walk challenge in your free time' : '🚶 Quick walk challenge'}</p>
       <h2>{offer.title}</h2>
-      <p>About <b>{offer.steps.toLocaleString()} steps</b> · {Math.ceil(offer.steps / 100)} min · reward <b>+{Math.round(offer.steps / 10)} points</b></p>
+      {offer.why && <p className="walk-why">{offer.why}</p>}
+      <p className="small">About <b>{offer.steps.toLocaleString()} steps</b> there and back · {Math.ceil(offer.steps / 100)} min · reward <b>+{Math.round(offer.steps / 10)} points</b></p>
       {stats}
       <div className="row">
         <button className="btn gold big" onClick={() => onWalk(offer)}>▶️ Start walk</button>

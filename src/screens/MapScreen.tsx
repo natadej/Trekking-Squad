@@ -6,6 +6,8 @@ import { POI_ICON, POI_LABEL, bookingAt, hostName, loadWorld, type Poi, type Poi
 import PlaceCard from '../components/PlaceCard';
 
 const WorldMap3D = lazy(() => import('../components/WorldMap3D'));
+const RealMap = lazy(() => import('../components/RealMap'));
+const VIEW_KEY = 'tsq.mapview';
 
 interface Props {
   p: Profile;
@@ -15,6 +17,7 @@ interface Props {
   collect: (pl: Place) => void;
   today: PlanItem[];
   addPlan: (i: PlanItem) => void;
+  onShop: () => void;
 }
 
 const fmt = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1609).toFixed(1)} miles`);
@@ -28,7 +31,9 @@ function vegasNow() {
   return { day: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`, min: t.getHours() * 60 + t.getMinutes() };
 }
 
-export default function MapScreen({ p, me, gpsError, startGps, collect, today, addPlan }: Props) {
+export default function MapScreen({ p, me, gpsError, startGps, collect, today, addPlan, onShop }: Props) {
+  const [view, setView] = useState<'map' | '3d'>(() => (localStorage.getItem(VIEW_KEY) === '3d' ? '3d' : 'map'));
+  useEffect(() => { localStorage.setItem(VIEW_KEY, view); }, [view]);
   const [pick, setPick] = useState<Place>();
   const [poi, setPoi] = useState<Poi>();
   const [world, setWorld] = useState<World>();
@@ -53,36 +58,42 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today, a
   const toggle = (k: PoiKind) => setKinds((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   const walk = (x: { lat: number; lng: number }) => `https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}&travelmode=walking`;
 
+  const mapProps = { me: me && me.lat < 36.2 && me.lat > 36 && me.lng > -115.3 && me.lng < -115 ? me : null, avatar: p.avatar, nick: p.nick, collected: got, focus: home, next, kinds, booked,
+    onPick: (x: Place) => { setFull(false); setPoi(undefined); setPick(x); }, onPoi: (x: Poi) => { setFull(false); setPick(undefined); setPoi(x); } };
+  const loading = <div className="map3d loading">Loading the map…</div>;
   return (
     <div className="screen">
-      <div className="map-bar">
-        <div className="map-stat"><b>{PLACES.filter((x) => got.has(x.id)).length}<small>/{PLACES.length}</small></b><span>places collected</span></div>
-        {!me ? <button className="btn primary" onClick={startGps}>📍 Find me</button>
-          : near && <span className="map-near">📍 {near.d < 20000 ? <><b>{near.pl.short}</b> · {fmt(near.d)}</> : <>Not in Vegas yet</>}</span>}
+      <div className="mapfull">
+        {view === 'map'
+          ? <Suspense fallback={loading}><RealMap world={world} {...mapProps} /></Suspense>
+          : world ? <Suspense fallback={loading}><WorldMap3D world={world} {...mapProps} /></Suspense> : loading}
+        <div className="map-over">
+          <div className="seg map-views" role="group" aria-label="Map view">
+            <button className={view === 'map' ? 'on' : ''} aria-pressed={view === 'map'} onClick={() => setView('map')}>Map</button>
+            <button className={view === '3d' ? 'on' : ''} aria-pressed={view === '3d'} onClick={() => setView('3d')}>3D game</button>
+            <button onClick={onShop}>Shops</button>
+          </div>
+          <div className="chips cats" role="group" aria-label="Show on map">
+            {KINDS.map((k) => (
+              <button key={k} className={`chip ${kinds.has(k) ? 'on' : ''}`} aria-pressed={kinds.has(k)} onClick={() => toggle(k)}>{POI_ICON[k]} {POI_LABEL[k]}</button>
+            ))}
+          </div>
+          {!me && <button className="btn primary small find-me" onClick={startGps}>📍 Find me</button>}
+          {gpsError && <p className="tip small">⚠️ {gpsError}</p>}
+          {near && canGet(near.pl) && <button className="btn gold pop" onClick={() => collect(near.pl)}>🪙 Collect +{near.pl.coins} at {near.pl.short}</button>}
+        </div>
+        <div className="map-under">
+          <span>{PLACES.filter((x) => got.has(x.id)).length}/{PLACES.length} places</span>
+          {near && <span>📍 {near.d < 20000 ? `${near.pl.short} · ${fmt(near.d)}` : 'Not in Vegas yet'}</span>}
+          {view === '3d' && <button className="linkish" onClick={() => setFull(true)}>Flat map</button>}
+        </div>
+        {full && (
+          <div className="fullmap">
+            <div className="sheet-head"><h2>🗺️ World map</h2><button className="x" aria-label="Close" onClick={() => setFull(false)}>✕</button></div>
+            <WorldMap world={world} {...mapProps} />
+          </div>
+        )}
       </div>
-      {gpsError && <p className="tip">⚠️ {gpsError}</p>}
-      {near && canGet(near.pl) && <button className="btn gold big pop" onClick={() => collect(near.pl)}>🪙 Collect +{near.pl.coins} at {near.pl.short}</button>}
-      <div className="chips cats" role="group" aria-label="Show on map">
-        {KINDS.map((k) => (
-          <button key={k} className={`chip ${kinds.has(k) ? 'on' : ''}`} aria-pressed={kinds.has(k)} onClick={() => toggle(k)}>{POI_ICON[k]} {POI_LABEL[k]}</button>
-        ))}
-      </div>
-
-      {(() => {
-        const mapProps = { me: me && me.lat < 36.2 && me.lat > 36 && me.lng > -115.3 && me.lng < -115 ? me : null, avatar: p.avatar, nick: p.nick, collected: got, focus: home, next, kinds, booked,
-          onPick: (x: Place) => { setFull(false); setPoi(undefined); setPick(x); }, onPoi: (x: Poi) => { setFull(false); setPick(undefined); setPoi(x); } };
-        return <>
-          {world ? <Suspense fallback={<div className="map3d loading">Loading the 3D world…</div>}><WorldMap3D world={world} {...mapProps} /></Suspense> : <div className="map3d loading">Loading the 3D world…</div>}
-          <button className="btn big" onClick={() => setFull(true)}>🗺️ Open the world map</button>
-          {full && (
-            <div className="fullmap">
-              <div className="sheet-head"><h2>🗺️ World map · Las Vegas Strip</h2><button className="x" aria-label="Close" onClick={() => setFull(false)}>✕</button></div>
-              <WorldMap world={world} {...mapProps} />
-            </div>
-          )}
-        </>;
-      })()}
-      <p className="map-key muted">Tap any building for photos and what's inside. 🔒 = booked for an event.</p>
 
       {pick && <PlaceCard place={pick} p={p} addPlan={addPlan} inside={inside(pick)} collected={got.has(pick.id)} distance={me ? distanceM(me, pick) : undefined} canCollect={canGet(pick)} booked={booked}
         onPoi={(x) => { setPick(undefined); setPoi(x); }} onCollect={() => { collect(pick); setPick(undefined); }} onClose={() => setPick(undefined)} />}
