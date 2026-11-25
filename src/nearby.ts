@@ -55,7 +55,7 @@ export async function fetchNearby(here: { lat: number; lng: number }, max = 12):
     const r = await fetch(`https://photon.komoot.io/reverse?lat=${here.lat}&lon=${here.lng}&limit=30&radius=0.12&lang=en`, { signal: ctl.signal });
     if (!r.ok) throw new Error(String(r.status));
     const osm = parsePhoton((await r.json()).features ?? [], here).filter((x) => !own.some((o) => o.name.toLowerCase() === x.name.toLowerCase()));
-    return [...own, ...osm].sort((a, b) => a.d - b.d).slice(0, max);
+    return [...own, ...osm.sort((a, b) => a.d - b.d).slice(0, Math.max(0, max - own.length))].sort((a, b) => a.d - b.d);
   } catch {
     if (!own.length) throw new Error('offline');
     return own.sort((a, b) => a.d - b.d);
