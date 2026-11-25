@@ -68,7 +68,7 @@ export default function Plan({ p, plan, onRemove, onMaybe, onSync, onWalk, synci
                   <div className="ttl">{i.title}</div>
                   <div className="meta">{[placeName(i), i.note].filter(Boolean).join(' · ')}</div>
                   <div className="row">
-                    {i.kind === 'walk' && <button className="btn small gold" onClick={() => onWalk(i)}>▶️ Start walk</button>}
+                    {i.kind === 'walk' && (p.walks?.some((d) => d.id === i.id) ? <span className="done-tag">✅ Walk done</span> : <button className="btn small gold" onClick={() => onWalk(i)}>▶️ Start walk</button>)}
                     {i.place && i.kind !== 'walk' && <a className="btn small" href={mapsLink(i.place)} target="_blank" rel="noreferrer">🧭 Go</a>}
                     {i.kind === 'ride' && i.id === 'ride-in' && p.trip.pickup !== 'friend' && <a className="btn small" href={uberLink(p.trip.hotelId)} target="_blank" rel="noreferrer">🚗 Uber</a>}
                     {i.kind === 'ride' && i.id === 'ride-out' && <a className="btn small" href={uberLink('airport')} target="_blank" rel="noreferrer">🚗 Uber</a>}

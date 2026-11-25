@@ -142,6 +142,7 @@ export default function App() {
 
   // walk challenges: start one, finish it by walking its steps, earn points, streaks and a chest every 3 walks
   const startWalk = (w: { id: string; title: string; steps: number; place?: string }) => {
+    if (p.walks?.some((d) => d.id === w.id)) { say('✅ You already finished this walk.'); return; }
     update((x) => ({ ...x, walkNow: { id: w.id, title: w.title, goal: w.steps, base: x.steps?.[nowPT().day] ?? 0, day: nowPT().day, place: w.place } }));
     if (!counting) startSteps();
     say(`🚶 Go! Walk ${w.steps.toLocaleString()} steps to finish.`);
@@ -152,6 +153,7 @@ export default function App() {
     if (!w) return;
     if (w.day !== nowPT().day) { update((x) => ({ ...x, walkNow: undefined })); return; }
     if (stepsToday - w.base < w.goal) return;
+    if (p.walks?.some((d) => d.id === w.id)) { update((x) => ({ ...x, walkNow: undefined })); return; }
     const done = [...(p.walks ?? []), { id: w.id, day: w.day, steps: w.goal }];
     const r = walkReward(done);
     update((x) => ({ ...x, walkNow: undefined, walks: done, points: x.points + r.points }));

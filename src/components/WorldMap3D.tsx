@@ -25,7 +25,7 @@ interface Props {
   onPoi: (p: Poi) => void;
 }
 type Light = 'auto' | 'day' | 'night';
-const FOV = 50, PITCH_MIN = 0.35, PITCH_MAX = 1.5, WALK = 28, MAX_D = 10000;
+const FOV = 50, PITCH_MIN = 0.35, PITCH_MAX = 1.5, WALK = 28, MAX_H = 10000, MAX_D = 12000;
 const vegasHour = () => Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
 const isNight = (l: Light) => (l === 'auto' ? vegasHour() >= 17 || vegasHour() < 7 : l === 'night');
 /** Nearest Strip sidewalk to a point, so the character starts outside, not inside a hotel. */
@@ -101,7 +101,10 @@ export default function WorldMap3D(props: Props) {
     const ring = new THREE.Mesh(new THREE.RingGeometry(4.5, 6, 40), new THREE.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: 0.9 })); ring.rotation.x = -Math.PI / 2; scene.add(ring);
 
     const applyCam = () => {
-      const far = THREE.MathUtils.smoothstep(C.dist, 2500, MAX_D), pitch = C.pitch + (1.25 - C.pitch) * far * 0.6, cp = Math.cos(pitch) * C.dist;
+      const tilt = () => C.pitch + (1.25 - C.pitch) * THREE.MathUtils.smoothstep(C.dist, 2500, MAX_D) * 0.6;
+      // never higher than 10 km above the ground
+      for (let k = 0; k < 6 && Math.sin(tilt()) * C.dist > MAX_H + 1; k++) C.dist = MAX_H / Math.sin(tilt());
+      const pitch = tilt(), cp = Math.cos(pitch) * C.dist;
       camera.position.set(C.target.x + Math.sin(C.yaw) * cp, Math.max(4, Math.sin(pitch) * C.dist), C.target.z + Math.cos(C.yaw) * cp);
       camera.lookAt(C.target.x, C.target.y + 6, C.target.z); camera.updateMatrixWorld();
     };
@@ -245,7 +248,11 @@ export default function WorldMap3D(props: Props) {
           let ax = tmp.x, ay = tmp.y; if (behind) { ax = -ax; ay = -ay; }
           const a = Math.atan2(-ay * h, ax * w), hw = w / 2 - 34, hh = h / 2 - 34;
           const k = Math.min(hw / Math.abs(Math.cos(a) || 1e-6), hh / Math.abs(Math.sin(a) || 1e-6));
-          ma.style.transform = `translate(${w / 2 + Math.cos(a) * k}px, ${h / 2 + Math.sin(a) * k}px) translate(-50%, -50%)`;
+          let px = w / 2 + Math.cos(a) * k, py = h / 2 + Math.sin(a) * k;
+          // keep clear of the mini-map in the top-right corner
+          const mm = el.querySelector<HTMLElement>('.minimap');
+          if (mm && px > mm.offsetLeft - 26 && py < mm.offsetTop + mm.offsetHeight + 26) py = mm.offsetTop + mm.offsetHeight + 28;
+          ma.style.transform = `translate(${px}px, ${py}px) translate(-50%, -50%)`;
           (ma.firstElementChild as HTMLElement).style.transform = `rotate(${a}rad)`;
         }
       }

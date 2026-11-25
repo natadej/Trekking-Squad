@@ -86,6 +86,7 @@ export default function WorldMap({ world, me, avatar, nick, collected, focus, ne
     if (touch.current.has(e.pointerId)) touch.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (twist.current && touch.current.size === 2) {
       const t = two(), s0 = twist.current, step = Math.round(Math.log(t.d / s0.d) / Math.log(1.6));
+      setFollow(false);
       setRot((((s0.r + t.a - s0.a) % 360) + 360) % 360);
       setZi(Math.max(0, Math.min(ZOOMS.length - 1, s0.zi + step)));
       return;
@@ -121,7 +122,7 @@ export default function WorldMap({ world, me, avatar, nick, collected, focus, ne
       }
       return { ...q, label };
     });
-  }, [world, z, center, size, kinds]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [world, z, center, size, kinds, rot]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const road = pts(STRIP_ROAD);
   const mePt = me ? P(me.lat, me.lng) : null;
@@ -137,7 +138,8 @@ export default function WorldMap({ world, me, avatar, nick, collected, focus, ne
   const meEdge = mePt && meOff ? (() => {
     const a = Math.atan2(mePt.y, mePt.x), hw = size.w / 2 - 30, hh = size.h / 2 - 30;
     const k = Math.min(hw / Math.abs(Math.cos(a) || 1e-6), hh / Math.abs(Math.sin(a) || 1e-6));
-    return { x: Math.cos(a) * k, y: Math.sin(a) * k, deg: (a * 180) / Math.PI };
+    const x = Math.cos(a) * k, y = Math.sin(a) * k, top = -size.h / 2 + 200; // keep clear of the mini-map
+    return { x, y: x > size.w / 2 - 120 && y < top ? top : y, deg: (a * 180) / Math.PI };
   })() : null;
 
   return (
