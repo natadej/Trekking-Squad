@@ -62,7 +62,7 @@ export default function MapScreen({ p, me, gpsError, startGps, collect, today, a
   const toggle = (k: PoiKind) => setKinds((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   const walk = (x: { lat: number; lng: number }) => `https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}&travelmode=walking`;
 
-  const mapProps = { me: me && me.lat < 36.2 && me.lat > 36 && me.lng > -115.3 && me.lng < -115 ? me : null, avatar: p.avatar, nick: p.nick, collected: got, focus: home, next, kinds: favOnly ? new Set<PoiKind>() : kinds, booked, only: favOnly ? favs : undefined,
+  const mapProps = { me: me && Math.abs(me.lat - EP.center.lat) < 0.3 && Math.abs(me.lng - EP.center.lng) < 0.3 ? me : null, avatar: p.avatar, nick: p.nick, collected: got, focus: home, next, kinds: favOnly ? new Set<PoiKind>() : kinds, booked, only: favOnly ? favs : undefined,
     onPick: (x: Place) => { setFull(false); setPoi(undefined); setPick(x); }, onPoi: (x: Poi) => { setFull(false); setPick(undefined); setPoi(x); } };
   const loading = <div className="map3d loading">Loading the map…</div>;
   return (
